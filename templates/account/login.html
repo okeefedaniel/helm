@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% load socialaccount %}
+
+{% block title %}Log In{% endblock %}
+
+{% block content %}
+{% get_providers as socialaccount_providers %}
+{% for provider in socialaccount_providers %}
+  {% if provider.id == "microsoft" %}
+    {% provider_login_url provider.id process="login" as ms_url %}
+  {% endif %}
+{% endfor %}
+{% with microsoft_login_url=ms_url register_url="/accounts/signup/" reset_password_url="/accounts/password/reset/" %}
+  {% include "keel/login_card.html" %}
+{% endwith %}
+{% endblock %}

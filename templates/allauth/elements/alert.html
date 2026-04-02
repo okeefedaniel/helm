@@ -1,0 +1,5 @@
+{% load allauth %}
+<div class="alert {% if attrs.tags %}alert-{{ attrs.tags }}{% else %}alert-info{% endif %} alert-dismissible fade show" role="alert">
+{% slot %}{% endslot %}
+<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+</div>

@@ -1,0 +1,62 @@
+{% load allauth %}
+{% if attrs.errors %}
+<div class="alert alert-danger py-2 small mb-2">{{ attrs.errors }}</div>
+{% endif %}
+<div class="mb-3">
+    {% if attrs.type == "textarea" %}
+        <label class="form-label" for="{{ attrs.id }}">
+            {% slot label %}
+            {% endslot %}
+        </label>
+        <textarea class="form-control{% if attrs.errors %} is-invalid{% endif %}"
+                  {% if attrs.required %}required{% endif %}
+                  {% if attrs.rows %}rows="{{ attrs.rows }}"{% endif %}
+                  {% if attrs.disabled %}disabled{% endif %}
+                  {% if attrs.readonly %}readonly{% endif %}
+                  {% if attrs.name %}name="{{ attrs.name }}"{% endif %}
+                  {% if attrs.id %}id="{{ attrs.id }}"{% endif %}
+                  {% if attrs.placeholder %}placeholder="{{ attrs.placeholder }}"{% endif %}>{% slot value %}{% endslot %}</textarea>
+    {% else %}
+        {% if attrs.type != "checkbox" and attrs.type != "radio" %}
+            <label class="form-label" for="{{ attrs.id }}">
+                {% slot label %}
+                {% endslot %}
+            </label>
+        {% endif %}
+        {% if attrs.type == "checkbox" or attrs.type == "radio" %}
+        <div class="form-check">
+            <input class="form-check-input{% if attrs.errors %} is-invalid{% endif %}"
+                   {% if attrs.required %}required{% endif %}
+                   {% if attrs.disabled %}disabled{% endif %}
+                   {% if attrs.readonly %}readonly{% endif %}
+                   {% if attrs.checked %}checked{% endif %}
+                   {% if attrs.name %}name="{{ attrs.name }}"{% endif %}
+                   {% if attrs.id %}id="{{ attrs.id }}"{% endif %}
+                   {% if attrs.value is not None %}value="{{ attrs.value }}"{% endif %}
+                   type="{{ attrs.type }}">
+            <label class="form-check-label" for="{{ attrs.id }}">
+                {% slot label %}
+                {% endslot %}
+            </label>
+        </div>
+        {% else %}
+            <input class="form-control{% if attrs.errors %} is-invalid{% endif %}"
+                   {% if attrs.required %}required{% endif %}
+                   {% if attrs.disabled %}disabled{% endif %}
+                   {% if attrs.readonly %}readonly{% endif %}
+                   {% if attrs.checked %}checked{% endif %}
+                   {% if attrs.name %}name="{{ attrs.name }}"{% endif %}
+                   {% if attrs.id %}id="{{ attrs.id }}"{% endif %}
+                   {% if attrs.placeholder %}placeholder="{{ attrs.placeholder }}"{% endif %}
+                   {% if attrs.autocomplete %}autocomplete="{{ attrs.autocomplete }}"{% endif %}
+                   {% if attrs.value is not None %}value="{{ attrs.value }}"{% endif %}
+                   type="{{ attrs.type }}">
+        {% endif %}
+    {% endif %}
+    {% if slots.help_text %}
+        <span class="form-text text-muted small">
+            {% slot help_text %}
+            {% endslot %}
+        </span>
+    {% endif %}
+</div>

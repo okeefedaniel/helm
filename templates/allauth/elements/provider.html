@@ -1,0 +1,4 @@
+{% load allauth %}
+<a href="{{ attrs.href }}" class="btn btn-outline-secondary w-100 mb-2" title="{{ attrs.name }}">
+{% if attrs.id == "microsoft" %}<i class="bi bi-microsoft me-2"></i>{% endif %}Sign in with {{ attrs.name }}
+</a>

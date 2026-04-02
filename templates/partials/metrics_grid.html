@@ -1,0 +1,18 @@
+{% load helm_tags %}
+<div class="row g-3">
+    {% for key, card in metrics_by_product.items %}
+    <div class="col-md-6">
+        {% include "partials/product_card.html" with card=card product_key=key %}
+    </div>
+    {% empty %}
+    <div class="col-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body text-center text-muted py-5">
+                <i class="bi bi-database-slash fs-1 d-block mb-3"></i>
+                <p class="mb-1">No product feeds available yet.</p>
+                <small>Run <code>python manage.py seed_helm</code> to load demo data.</small>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>

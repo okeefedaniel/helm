@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% load humanize helm_tags %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<!-- Period Context Bar -->
+{% include "partials/period_bar.html" %}
+
+<!-- Action Queue -->
+<div class="mb-4" hx-get="{% url 'dashboard:partial-action-queue' %}" hx-trigger="every 30s" hx-swap="innerHTML">
+    {% include "partials/action_queue.html" %}
+</div>
+
+<div class="row g-3">
+    <!-- Metrics Grid (left, 8 cols) -->
+    <div class="col-lg-8">
+        <div hx-get="{% url 'dashboard:partial-metrics' %}" hx-trigger="every 60s" hx-swap="innerHTML">
+            {% include "partials/metrics_grid.html" %}
+        </div>
+    </div>
+
+    <!-- Alerts Panel (right sidebar, 4 cols) -->
+    <div class="col-lg-4">
+        <div hx-get="{% url 'dashboard:partial-alerts' %}" hx-trigger="every 60s" hx-swap="innerHTML">
+            {% include "partials/alert_panel.html" %}
+        </div>
+
+        <!-- Bookmarks -->
+        {% if bookmarks %}
+        <div class="card border-0 shadow-sm mt-3">
+            <div class="card-header bg-white border-bottom">
+                <h6 class="mb-0"><i class="bi bi-bookmark me-2"></i>Watching</h6>
+            </div>
+            <div class="list-group list-group-flush">
+                {% for bm in bookmarks %}
+                <a href="{{ bm.deep_link }}" class="list-group-item list-group-item-action py-2" target="_blank" rel="noopener">
+                    <small class="text-muted">{{ bm.product|upper }}</small>
+                    <div>{{ bm.item_label }}</div>
+                    {% if bm.notes %}<small class="text-muted">{{ bm.notes|truncatewords:10 }}</small>{% endif %}
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

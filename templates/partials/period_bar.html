@@ -1,0 +1,15 @@
+{% load humanize %}
+<div class="period-bar bg-light rounded-3 p-2 px-3 mb-3 d-flex align-items-center justify-content-between">
+    <div class="d-flex align-items-center gap-3">
+        <span class="fw-semibold text-muted small">
+            <i class="bi bi-calendar3 me-1"></i>Fiscal Period
+        </span>
+        <span class="badge bg-primary">FY2026</span>
+        <span class="text-muted small">March &middot; Under Review</span>
+    </div>
+    <div class="d-flex align-items-center gap-2">
+        <span class="badge fleet-health-{{ fleet_health|default:'gray' }}">
+            <i class="bi bi-heart-pulse me-1"></i>Fleet: {{ fleet_health|default:"—" }}
+        </span>
+    </div>
+</div>

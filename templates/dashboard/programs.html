@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% load humanize helm_tags %}
+
+{% block title %}My Programs{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h4 class="mb-0"><i class="bi bi-collection me-2"></i>My Programs</h4>
+</div>
+
+<p class="text-muted mb-4">
+    Cross-product view of programs you manage. Metrics, actions, and alerts filtered to your assignments.
+</p>
+
+<!-- Action Items for my programs -->
+{% if action_items %}
+<div class="mb-4">
+    {% include "partials/action_queue.html" %}
+</div>
+{% endif %}
+
+<!-- Product Metrics -->
+<div class="row g-3">
+    {% for key, card in metrics_by_product.items %}
+    <div class="col-md-6">
+        {% include "partials/product_card.html" with card=card product_key=key %}
+    </div>
+    {% empty %}
+    <div class="col-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body text-center text-muted py-5">
+                <i class="bi bi-collection fs-1 d-block mb-3"></i>
+                <p>No program data available yet.</p>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Alerts -->
+{% if alerts %}
+<div class="mt-4">
+    {% include "partials/alert_panel.html" %}
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,23 @@
+<div class="card border-0 shadow-sm mt-3">
+    <div class="card-header bg-white border-bottom">
+        <h6 class="mb-0"><i class="bi bi-clock-history me-2"></i>Recent Activity</h6>
+    </div>
+    <div class="card-body p-0">
+        <div class="list-group list-group-flush" style="max-height: 300px; overflow-y: auto;">
+            {% for entry in activity_entries %}
+            <div class="list-group-item py-2">
+                <div class="d-flex justify-content-between">
+                    <small>
+                        <strong>{{ entry.user }}</strong> {{ entry.description }}
+                    </small>
+                    <small class="text-muted">{{ entry.timestamp }}</small>
+                </div>
+            </div>
+            {% empty %}
+            <div class="list-group-item text-center text-muted py-3">
+                <small>No recent activity.</small>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>

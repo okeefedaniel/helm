@@ -1,0 +1,124 @@
+/* ============================================
+   Helm — Executive Dashboard Styles
+   Extends docklabs.css with Helm-only components.
+   ============================================ */
+
+/* -- Period Context Bar -- */
+.period-bar {
+    border-left: 4px solid var(--ct-blue);
+}
+
+/* -- Fleet Health Badges -- */
+.fleet-health-green { background-color: var(--ct-green) !important; color: #fff; }
+.fleet-health-yellow { background-color: var(--ct-yellow) !important; color: var(--ct-dark-gray); }
+.fleet-health-red { background-color: var(--ct-red) !important; color: #fff; }
+.fleet-health-gray { background-color: #6c757d !important; color: #fff; }
+
+/* -- Product Cards -- */
+.product-card {
+    transition: box-shadow 0.15s ease;
+}
+.product-card:hover {
+    box-shadow: 0 0.25rem 0.75rem rgba(0, 0, 0, 0.12) !important;
+}
+.product-card .card-header a:hover {
+    color: var(--ct-blue) !important;
+}
+
+/* -- Metric Widgets -- */
+.metric-widget {
+    border-radius: 0.5rem;
+    background: var(--ct-light-gray);
+}
+.metric-value {
+    color: var(--ct-dark-blue);
+    line-height: 1.2;
+}
+.metric-label {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+.metric-trend {
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+/* -- Action Queue -- */
+.list-group-item-action:hover {
+    background-color: var(--ct-pale-blue);
+}
+
+/* -- Sparkline Charts -- */
+.sparkline-chart {
+    width: 100% !important;
+    max-height: 40px;
+}
+
+/* -- Severity & Priority Badges -- */
+.badge-sm {
+    font-size: 0.65rem;
+    padding: 0.2em 0.5em;
+}
+
+/* -- Alert Panel Scrollable -- */
+.alert-panel-scroll {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+/* -- Dashboard Layout -- */
+@media (min-width: 1200px) {
+    .container-fluid {
+        max-width: 1600px;
+    }
+}
+
+/* -- Notification Inbox -- */
+.list-group-item.bg-light {
+    border-left: 3px solid var(--ct-blue);
+}
+
+/* -- Bookmark Cards -- */
+.list-group-item-action small.text-muted {
+    font-size: 0.75rem;
+}
+
+/* -- Loading States (htmx) -- */
+.htmx-indicator {
+    display: none;
+}
+.htmx-request .htmx-indicator {
+    display: inline-block;
+}
+.htmx-request .htmx-content {
+    opacity: 0.5;
+    transition: opacity 0.2s ease;
+}
+
+/* -- Custom scrollbar for alert/notification panels -- */
+.list-group-flush::-webkit-scrollbar {
+    width: 6px;
+}
+.list-group-flush::-webkit-scrollbar-track {
+    background: transparent;
+}
+.list-group-flush::-webkit-scrollbar-thumb {
+    background-color: #ccc;
+    border-radius: 3px;
+}
+
+/* -- Responsive Tweaks -- */
+@media (max-width: 991.98px) {
+    .period-bar {
+        flex-direction: column;
+        align-items: flex-start !important;
+        gap: 0.5rem;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .metric-value {
+        font-size: 1.25rem !important;
+    }
+}

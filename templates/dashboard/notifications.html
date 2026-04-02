@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% load humanize %}
+
+{% block title %}Inbox{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h4 class="mb-0"><i class="bi bi-inbox me-2"></i>Notification Inbox</h4>
+    <span class="badge bg-primary">{{ unread_count }} unread</span>
+</div>
+
+<!-- Filters -->
+<div class="card border-0 shadow-sm mb-3">
+    <div class="card-body py-2">
+        <form method="get" class="d-flex gap-3 align-items-center">
+            <select name="read" class="form-select form-select-sm" style="width: auto;" onchange="this.form.submit()">
+                <option value="">All</option>
+                <option value="unread" {% if request.GET.read == 'unread' %}selected{% endif %}>Unread</option>
+                <option value="read" {% if request.GET.read == 'read' %}selected{% endif %}>Read</option>
+            </select>
+            <input type="text" name="product" class="form-control form-control-sm" style="width: 200px;" placeholder="Filter by product..." value="{{ request.GET.product|default:'' }}">
+            <button type="submit" class="btn btn-sm btn-outline-primary">Filter</button>
+        </form>
+    </div>
+</div>
+
+<!-- Notification List -->
+<div class="card border-0 shadow-sm">
+    <div class="list-group list-group-flush">
+        {% for notif in notifications %}
+        <div class="list-group-item py-3 {% if not notif.is_read %}bg-light{% endif %}">
+            <div class="d-flex justify-content-between align-items-start">
+                <div class="d-flex gap-3">
+                    <div>
+                        {% if notif.priority == 'urgent' or notif.priority == 'high' %}
+                        <i class="bi bi-exclamation-circle-fill text-danger"></i>
+                        {% elif not notif.is_read %}
+                        <i class="bi bi-circle-fill text-primary" style="font-size: .5rem;"></i>
+                        {% else %}
+                        <i class="bi bi-circle text-muted" style="font-size: .5rem;"></i>
+                        {% endif %}
+                    </div>
+                    <div>
+                        <div class="fw-semibold{% if not notif.is_read %} text-dark{% else %} text-muted{% endif %}">
+                            {{ notif.title }}
+                        </div>
+                        <div class="text-muted small">{{ notif.message|truncatewords:20 }}</div>
+                        {% if notif.link %}
+                        <a href="{{ notif.link }}" class="small" target="_blank" rel="noopener">View in product <i class="bi bi-box-arrow-up-right"></i></a>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="text-muted small text-end" style="min-width: 100px;">
+                    {{ notif.created_at|timesince }} ago
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="list-group-item text-center text-muted py-5">
+            <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+            No notifications.
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

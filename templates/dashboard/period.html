@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% load humanize helm_tags %}
+
+{% block title %}Period: {{ period.label|default:"Detail" }}{% endblock %}
+
+{% block breadcrumbs %}
+<nav aria-label="breadcrumb" class="bg-light border-bottom">
+    <div class="container-fluid">
+        <ol class="breadcrumb mb-0 py-2 small">
+            <li class="breadcrumb-item"><a href="{% url 'dashboard:index' %}">Dashboard</a></li>
+            <li class="breadcrumb-item active">{{ period.label|default:"Period" }}</li>
+        </ol>
+    </div>
+</nav>
+{% endblock %}
+
+{% block content %}
+{% if period %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <h4 class="mb-0">
+            <i class="bi bi-calendar3 me-2"></i>{{ period.fiscal_year.name }} &mdash; {{ period.label }}
+        </h4>
+        <span class="badge bg-primary mt-1">{{ period.get_status_display }}</span>
+    </div>
+</div>
+
+<!-- Period Metrics from each product -->
+<div class="row g-3">
+    {% for key, card in metrics_by_product.items %}
+    <div class="col-md-6 col-lg-4">
+        {% include "partials/product_card.html" with card=card product_key=key %}
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Period Alerts -->
+{% if alerts %}
+<div class="mt-4">
+    <h5><i class="bi bi-exclamation-diamond me-2"></i>Period Alerts</h5>
+    {% include "partials/alert_panel.html" %}
+</div>
+{% endif %}
+
+{% else %}
+<div class="text-center text-muted py-5">
+    <i class="bi bi-calendar-x fs-1 d-block mb-3"></i>
+    <p>Period not found.</p>
+    <a href="{% url 'dashboard:index' %}" class="btn btn-outline-primary">Back to Dashboard</a>
+</div>
+{% endif %}
+{% endblock %}

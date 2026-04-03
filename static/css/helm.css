@@ -3,6 +3,20 @@
    Extends docklabs.css with Helm-only components.
    ============================================ */
 
+/* -- Fleet Chips (compact product launcher) -- */
+.fleet-chip {
+    font-size: .75rem;
+    border-radius: 1rem;
+    line-height: 1.4;
+    white-space: nowrap;
+    transition: all 0.15s ease;
+}
+.fleet-chip:hover {
+    background-color: var(--ct-blue) !important;
+    border-color: var(--ct-blue) !important;
+    color: #fff !important;
+}
+
 /* -- Period Context Bar -- */
 .period-bar {
     border-left: 4px solid var(--ct-blue);

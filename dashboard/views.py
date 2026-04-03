@@ -1,11 +1,14 @@
 """Helm dashboard views."""
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.http import JsonResponse
-from django.views import View
 from django.views.generic import TemplateView
 
 from .models import CachedFeedSnapshot, DashboardBookmark
-from .services import FeedAggregator
+from .services import FeedAggregator, get_user_product_keys
+
+
+def _aggregator_for(user):
+    """Return a FeedAggregator filtered to the user's product access."""
+    return FeedAggregator(product_keys=get_user_product_keys(user))
 
 
 class DashboardView(LoginRequiredMixin, TemplateView):
@@ -14,7 +17,7 @@ class DashboardView(LoginRequiredMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        agg = FeedAggregator()
+        agg = _aggregator_for(self.request.user)
 
         context['action_items'] = agg.get_all_action_items()
         context['action_items_count'] = len(context['action_items'])
@@ -68,7 +71,7 @@ class PeriodDetailView(LoginRequiredMixin, TemplateView):
         except FiscalPeriod.DoesNotExist:
             period = None
 
-        agg = FeedAggregator()
+        agg = _aggregator_for(self.request.user)
         context['period'] = period
         context['metrics_by_product'] = agg.get_metrics_by_product()
         context['alerts'] = agg.get_all_alerts()
@@ -81,7 +84,7 @@ class MyProgramsView(LoginRequiredMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        agg = FeedAggregator()
+        agg = _aggregator_for(self.request.user)
         context['metrics_by_product'] = agg.get_metrics_by_product()
         context['action_items'] = agg.get_all_action_items()
         context['alerts'] = agg.get_all_alerts()
@@ -96,7 +99,7 @@ class ActionQueuePartialView(LoginRequiredMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        agg = FeedAggregator()
+        agg = _aggregator_for(self.request.user)
         context['action_items'] = agg.get_all_action_items()
         context['action_items_count'] = len(context['action_items'])
         return context
@@ -108,7 +111,7 @@ class AlertPanelPartialView(LoginRequiredMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        agg = FeedAggregator()
+        agg = _aggregator_for(self.request.user)
         context['alerts'] = agg.get_all_alerts()
         context['alerts_count'] = len(context['alerts'])
         return context
@@ -120,7 +123,7 @@ class MetricsGridPartialView(LoginRequiredMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        agg = FeedAggregator()
+        agg = _aggregator_for(self.request.user)
         context['metrics_by_product'] = agg.get_metrics_by_product()
         return context
 
@@ -132,7 +135,7 @@ class ProductCardPartialView(LoginRequiredMixin, TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         product_key = self.kwargs.get('product')
-        agg = FeedAggregator()
+        agg = _aggregator_for(self.request.user)
         all_metrics = agg.get_metrics_by_product()
         context['card'] = all_metrics.get(product_key, {})
         context['product_key'] = product_key

@@ -108,6 +108,17 @@
     border-radius: 3px;
 }
 
+/* -- Product Launcher Cards -- */
+.product-launcher-card {
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    color: var(--ct-dark-gray);
+}
+.product-launcher-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.12) !important;
+    color: var(--ct-dark-gray);
+}
+
 /* -- Responsive Tweaks -- */
 @media (max-width: 991.98px) {
     .period-bar {

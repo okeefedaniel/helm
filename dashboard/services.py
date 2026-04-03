@@ -12,13 +12,40 @@ logger = logging.getLogger(__name__)
 PRODUCT_META = {p['key']: p for p in getattr(settings, 'FLEET_PRODUCTS', [])}
 
 
+def get_user_product_keys(user) -> set[str] | None:
+    """Return the set of product keys a user can access, or None for all.
+
+    Superusers see everything. Regular users see only products they
+    have ProductAccess for. Returns None to mean "no filter."
+    """
+    if user is None or not user.is_authenticated:
+        return set()
+    if user.is_superuser:
+        return None  # No filter — sees everything
+    return set(user.get_products())
+
+
 class FeedAggregator:
-    """Reads cached feed snapshots and assembles dashboard data."""
+    """Reads cached feed snapshots and assembles dashboard data.
+
+    Pass product_keys to filter to specific products. None means all.
+    """
+
+    def __init__(self, product_keys: set[str] | None = None):
+        self._product_keys = product_keys
+
+    def _should_include(self, product_key: str) -> bool:
+        if self._product_keys is None:
+            return True
+        return product_key in self._product_keys
 
     def get_all_feeds(self) -> list[ProductFeed]:
         """Return all cached product feeds as ProductFeed objects."""
+        qs = CachedFeedSnapshot.objects.all()
+        if self._product_keys is not None:
+            qs = qs.filter(product__in=self._product_keys)
         feeds = []
-        for snapshot in CachedFeedSnapshot.objects.all():
+        for snapshot in qs:
             try:
                 feed = ProductFeed.from_dict(snapshot.feed_data)
                 feeds.append(feed)
@@ -28,6 +55,8 @@ class FeedAggregator:
 
     def get_feed(self, product_key: str) -> ProductFeed | None:
         """Return a single product's cached feed."""
+        if not self._should_include(product_key):
+            return None
         try:
             snapshot = CachedFeedSnapshot.objects.get(product=product_key)
             return ProductFeed.from_dict(snapshot.feed_data)
@@ -127,7 +156,7 @@ class FeedAggregator:
         for feed in feeds:
             parts = []
             for m in feed.metrics[:3]:
-                val = m.value if not hasattr(m, 'value') else m.value
+                val = m.value
                 unit = m.unit if hasattr(m, 'unit') else None
                 if unit == 'USD':
                     formatted = f'${val:,.0f}'
@@ -139,8 +168,8 @@ class FeedAggregator:
                 metrics_summary[feed.product] = ', '.join(parts)
 
         return {
-            'briefing_date': '',  # Set by the view
-            'fiscal_context': '',  # Set by the view
+            'briefing_date': '',
+            'fiscal_context': '',
             'action_items_count': len(action_items),
             'critical_actions': critical_actions,
             'alerts_count': len(alerts),

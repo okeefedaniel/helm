@@ -4,7 +4,7 @@ from django.contrib.auth.views import LoginView, LogoutView
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
-from django.views.generic import RedirectView
+from django.views.generic import RedirectView, TemplateView
 
 from keel.core.views import health_check, robots_txt
 from core.forms import LoginForm
@@ -19,8 +19,8 @@ urlpatterns = [
     path('robots.txt', robots_txt, name='robots_txt'),
     path('health/', health_check, name='health_check'),
     path('admin/', admin.site.urls),
-    # Root redirects to dashboard
-    path('', RedirectView.as_view(url='/helm/', permanent=False)),
+    # Root — landing page for visitors, redirect to dashboard for logged-in users
+    path('', TemplateView.as_view(template_name='landing.html'), name='landing'),
     # Custom login/logout views using our styled templates (before allauth)
     path('accounts/login/', LoginView.as_view(
         template_name='account/login.html',

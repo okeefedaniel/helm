@@ -39,6 +39,12 @@ if RAILWAY_DOMAIN:
 CSRF_TRUSTED_ORIGINS = [o for o in CSRF_TRUSTED_ORIGINS if o]
 
 # ---------------------------------------------------------------------------
+# Demo Mode
+# ---------------------------------------------------------------------------
+DEMO_MODE = os.environ.get('DEMO_MODE', 'False').lower() in ('true', '1', 'yes')
+DEMO_ROLES = ['helm_admin', 'helm_director', 'helm_viewer']
+
+# ---------------------------------------------------------------------------
 # Apps
 # ---------------------------------------------------------------------------
 INSTALLED_APPS = [

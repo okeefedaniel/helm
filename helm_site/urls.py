@@ -7,6 +7,7 @@ from django.conf.urls.static import static
 from django.views.generic import RedirectView, TemplateView
 
 from keel.core.views import health_check, robots_txt
+from keel.core.demo import demo_login_view
 from core.forms import LoginForm
 
 from django.utils.translation import gettext_lazy as _
@@ -18,6 +19,7 @@ admin.site.index_title = _('Executive Dashboard')
 urlpatterns = [
     path('robots.txt', robots_txt, name='robots_txt'),
     path('health/', health_check, name='health_check'),
+    path('demo-login/', demo_login_view, name='demo_login'),
     path('admin/', admin.site.urls),
     # Root — landing page for visitors, redirect to dashboard for logged-in users
     path('', TemplateView.as_view(template_name='landing.html'), name='landing'),

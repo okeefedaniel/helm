@@ -1,11 +1,13 @@
 """Helm URL Configuration."""
 from django.contrib import admin
+from django.contrib.auth.views import LoginView, LogoutView
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 from django.views.generic import RedirectView
 
 from keel.core.views import health_check, robots_txt
+from core.forms import LoginForm
 
 from django.utils.translation import gettext_lazy as _
 
@@ -19,7 +21,13 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     # Root redirects to dashboard
     path('', RedirectView.as_view(url='/helm/', permanent=False)),
-    # Allauth
+    # Custom login/logout views using our styled templates (before allauth)
+    path('accounts/login/', LoginView.as_view(
+        template_name='account/login.html',
+        authentication_form=LoginForm,
+    ), name='account_login'),
+    path('accounts/logout/', LogoutView.as_view(), name='account_logout'),
+    # Allauth handles everything else (signup, SSO, MFA, password reset)
     path('accounts/', include('allauth.urls')),
     # Keel shared
     path('notifications/', include('keel.notifications.urls')),

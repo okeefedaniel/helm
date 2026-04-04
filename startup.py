@@ -92,6 +92,18 @@ def main():
     log("=== Running migrations ===")
     run(f"{manage} migrate --noinput")
 
+    # Ensure django.contrib.sites has the correct Site record (required by allauth)
+    log("=== Configuring Site object ===")
+    try:
+        from django.contrib.sites.models import Site
+        domain = os.environ.get('SITE_DOMAIN', 'helm.docklabs.ai')
+        site, created = Site.objects.update_or_create(
+            id=1, defaults={'domain': domain, 'name': 'Helm'},
+        )
+        log(f"  Site {'created' if created else 'updated'}: {site.domain}")
+    except Exception as e:
+        log(f"  WARNING: Could not configure Site: {e}")
+
     # Seed demo data if no feeds exist yet
     log("=== Checking seed data ===")
     try:

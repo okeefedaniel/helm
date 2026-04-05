@@ -116,8 +116,8 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
-                'core.context_processors.site_context',
-                'core.context_processors.fleet_context',
+                'keel.core.context_processors.site_context',
+                'keel.core.context_processors.fleet_context',
             ],
         },
     },
@@ -232,6 +232,14 @@ RESEND_API_KEY = os.environ.get('RESEND_API_KEY', '')
 # ---------------------------------------------------------------------------
 # Keel
 # ---------------------------------------------------------------------------
+KEEL_PRODUCT_CODE = 'helm'
+KEEL_FLEET_PRODUCTS = [
+    {'name': 'Helm', 'label': 'Helm', 'code': 'helm', 'url': '/'},
+    {'name': 'Beacon', 'label': 'Beacon', 'code': 'beacon', 'url': '/'},
+    {'name': 'Harbor', 'label': 'Harbor', 'code': 'harbor', 'url': '/'},
+    {'name': 'Bounty', 'label': 'Bounty', 'code': 'bounty', 'url': '/'},
+    {'name': 'Lookout', 'label': 'Lookout', 'code': 'lookout', 'url': '/'},
+]
 KEEL_PRODUCT_NAME = 'Helm'
 KEEL_PRODUCT_ICON = 'bi-compass'
 KEEL_PRODUCT_SUBTITLE = 'Executive Dashboard'

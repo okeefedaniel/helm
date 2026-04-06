@@ -104,6 +104,10 @@ def main():
     except Exception as e:
         log(f"  WARNING: Could not configure Site: {e}")
 
+    # Bootstrap superuser from env vars (idempotent, always resets password)
+    if os.environ.get('CREATE_SUPERUSER', '').lower() in ('true', '1', 'yes'):
+        run(f"{manage} ensure_superuser")
+
     # Seed demo data if no feeds exist yet
     log("=== Checking seed data ===")
     try:

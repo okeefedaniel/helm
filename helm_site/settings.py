@@ -275,12 +275,12 @@ REST_FRAMEWORK = {
 # Fleet Product Registry (for dashboard navigation)
 # ---------------------------------------------------------------------------
 FLEET_PRODUCTS = [
-    {'key': 'harbor', 'label': 'Harbor', 'icon': 'bi-bank2', 'url': 'https://harbor.docklabs.ai', 'tagline': 'State Grants'},
-    {'key': 'bounty', 'label': 'Bounty', 'icon': 'bi-globe', 'url': 'https://bounty.docklabs.ai', 'tagline': 'Federal Funds'},
-    {'key': 'beacon', 'label': 'Beacon', 'icon': 'bi-broadcast', 'url': 'https://beacon.docklabs.ai', 'tagline': 'CRM'},
+    {'key': 'harbor', 'label': 'Harbor', 'icon': 'bi-bank2', 'url': 'https://harbor.docklabs.ai/dashboard/', 'tagline': 'State Grants'},
+    {'key': 'bounty', 'label': 'Bounty', 'icon': 'bi-globe', 'url': 'https://bounty.docklabs.ai/dashboard/', 'tagline': 'Federal Funds'},
+    {'key': 'beacon', 'label': 'Beacon', 'icon': 'bi-broadcast', 'url': 'https://beacon.docklabs.ai/dashboard/', 'tagline': 'CRM'},
     {'key': 'admiralty', 'label': 'Admiralty', 'icon': 'bi-shield-check', 'url': 'https://admiralty.docklabs.ai', 'tagline': 'FOIA'},
     {'key': 'manifest', 'label': 'Manifest', 'icon': 'bi-pen', 'url': 'https://manifest.docklabs.ai', 'tagline': 'Signing'},
-    {'key': 'lookout', 'label': 'Lookout', 'icon': 'bi-binoculars', 'url': 'https://lookout.docklabs.ai', 'tagline': 'Legislative'},
+    {'key': 'lookout', 'label': 'Lookout', 'icon': 'bi-binoculars', 'url': 'https://lookout.docklabs.ai/dashboard/', 'tagline': 'Legislative'},
     {'key': 'purser', 'label': 'Purser', 'icon': 'bi-safe2', 'url': 'https://purser.docklabs.ai', 'tagline': 'Finance'},
     {'key': 'yeoman', 'label': 'Yeoman', 'icon': 'bi-calendar-event', 'url': 'https://yeoman.docklabs.ai', 'tagline': 'Scheduling'},
 ]

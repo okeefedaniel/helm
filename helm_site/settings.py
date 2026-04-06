@@ -244,10 +244,10 @@ KEEL_PRODUCT_NAME = 'Helm'
 KEEL_PRODUCT_ICON = 'bi-compass'
 KEEL_PRODUCT_SUBTITLE = 'Executive Dashboard'
 KEEL_GATE_ACCESS = True
-KEEL_AUDIT_LOG_MODEL = 'core.AuditLog'
-KEEL_NOTIFICATION_MODEL = 'core.Notification'
-KEEL_NOTIFICATION_PREFERENCE_MODEL = 'core.NotificationPreference'
-KEEL_NOTIFICATION_LOG_MODEL = 'core.NotificationLog'
+KEEL_AUDIT_LOG_MODEL = 'helm_core.AuditLog'
+KEEL_NOTIFICATION_MODEL = 'helm_core.Notification'
+KEEL_NOTIFICATION_PREFERENCE_MODEL = 'helm_core.NotificationPreference'
+KEEL_NOTIFICATION_LOG_MODEL = 'helm_core.NotificationLog'
 KEEL_API_KEY = os.environ.get('KEEL_API_KEY', '')
 KEEL_API_URL = os.environ.get('KEEL_API_URL', 'https://keel.docklabs.ai')
 

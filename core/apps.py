@@ -3,6 +3,8 @@ from django.apps import AppConfig
 
 class CoreConfig(AppConfig):
     name = 'core'
+    label = 'helm_core'
+    verbose_name = 'Helm Core'
 
     def ready(self):
         from keel.notifications import NotificationType, register

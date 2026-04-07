@@ -75,6 +75,7 @@ INSTALLED_APPS = [
     'allauth.account',
     'allauth.socialaccount',
     'allauth.socialaccount.providers.microsoft',
+    'allauth.socialaccount.providers.openid_connect',  # Phase 2b: Keel as IdP
     'allauth.mfa',
     # Project apps
     'core.apps.CoreConfig',
@@ -166,6 +167,7 @@ ACCOUNT_UNIQUE_EMAIL = True
 ACCOUNT_EMAIL_VERIFICATION = 'optional'
 ACCOUNT_LOGIN_ON_EMAIL_CONFIRMATION = True
 ACCOUNT_ADAPTER = 'keel.core.sso.KeelAccountAdapter'
+SOCIALACCOUNT_ADAPTER = 'keel.core.sso.KeelSocialAccountAdapter'
 
 SOCIALACCOUNT_PROVIDERS = {
     'microsoft': {
@@ -177,6 +179,33 @@ SOCIALACCOUNT_PROVIDERS = {
         'SCOPE': ['openid', 'email', 'profile', 'User.Read'],
     },
 }
+
+# ---------------------------------------------------------------------------
+# Keel OIDC (Phase 2b) — Keel is the identity provider for the DockLabs suite
+# ---------------------------------------------------------------------------
+# When KEEL_OIDC_CLIENT_ID is set, this product federates authentication to
+# Keel via standard OAuth2/OIDC. When unset, the product falls back to local
+# Django auth (+ optional direct Microsoft SSO), so standalone deployments
+# continue to work without any Keel dependency.
+KEEL_OIDC_CLIENT_ID = os.environ.get('KEEL_OIDC_CLIENT_ID', '')
+KEEL_OIDC_CLIENT_SECRET = os.environ.get('KEEL_OIDC_CLIENT_SECRET', '')
+KEEL_OIDC_ISSUER = os.environ.get('KEEL_OIDC_ISSUER', 'https://keel.docklabs.ai')
+
+if KEEL_OIDC_CLIENT_ID:
+    SOCIALACCOUNT_PROVIDERS['openid_connect'] = {
+        'APPS': [
+            {
+                'provider_id': 'keel',
+                'name': 'Sign in with DockLabs',
+                'client_id': KEEL_OIDC_CLIENT_ID,
+                'secret': KEEL_OIDC_CLIENT_SECRET,
+                'settings': {
+                    'server_url': f'{KEEL_OIDC_ISSUER}/oauth/.well-known/openid-configuration',
+                    'token_auth_method': 'client_secret_post',
+                },
+            },
+        ],
+    }
 
 # MFA
 MFA_ADAPTER = 'allauth.mfa.adapter.DefaultMFAAdapter'

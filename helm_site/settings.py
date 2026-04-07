@@ -168,6 +168,7 @@ ACCOUNT_EMAIL_VERIFICATION = 'optional'
 ACCOUNT_LOGIN_ON_EMAIL_CONFIRMATION = True
 ACCOUNT_ADAPTER = 'keel.core.sso.KeelAccountAdapter'
 SOCIALACCOUNT_ADAPTER = 'keel.core.sso.KeelSocialAccountAdapter'
+SOCIALACCOUNT_LOGIN_ON_GET = True  # Skip the intermediate "Continue?" page
 
 SOCIALACCOUNT_PROVIDERS = {
     'microsoft': {

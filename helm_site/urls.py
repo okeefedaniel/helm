@@ -6,7 +6,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.views.generic import RedirectView, TemplateView
 
-from keel.core.views import health_check, robots_txt
+from keel.core.views import health_check, robots_txt, LandingView
 from keel.core.demo import demo_login_view
 from core.forms import LoginForm
 
@@ -22,7 +22,33 @@ urlpatterns = [
     path('demo-login/', demo_login_view, name='demo_login'),
     path('admin/', admin.site.urls),
     # Root — landing page for visitors, redirect to dashboard for logged-in users
-    path('', TemplateView.as_view(template_name='landing.html'), name='landing'),
+    path('', LandingView.as_view(
+        template_name='landing.html',
+        authenticated_redirect='dashboard',
+        stats=[
+            {'value': '9', 'label': 'Products'},
+            {'value': '1', 'label': 'Identity'},
+            {'value': 'Real-time', 'label': 'Aggregation'},
+            {'value': 'Role-based', 'label': 'Access'},
+        ],
+        features=[
+            {'icon': 'bi-bar-chart-line', 'title': 'Cross-Fleet Dashboards',
+             'description': 'See real-time metrics from every DockLabs product in a single executive view.',
+             'color': 'blue'},
+            {'icon': 'bi-check2-square', 'title': 'Action Items',
+             'description': 'Pending approvals, overdue tasks, and items requiring attention — across all products.',
+             'color': 'teal'},
+            {'icon': 'bi-shield-check', 'title': 'Compliance & Alerts',
+             'description': 'Monitor compliance posture, security alerts, and operational health from one place.',
+             'color': 'yellow'},
+        ],
+        steps=[
+            {'title': 'Sign In Once', 'description': 'One DockLabs identity unlocks every product in the fleet.'},
+            {'title': 'Pick a Product', 'description': 'Jump to any product from the fleet switcher — no re-login.'},
+            {'title': 'See Aggregated Metrics', 'description': 'Helm rolls up KPIs from every product into your executive dashboard.'},
+            {'title': 'Drill Into Details', 'description': 'Click any metric to jump straight into the underlying product.'},
+        ],
+    ), name='landing'),
     # Custom login/logout views using our styled templates (before allauth)
     path('accounts/login/', LoginView.as_view(
         template_name='account/login.html',

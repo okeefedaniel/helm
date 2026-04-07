@@ -1,39 +1,48 @@
-{% extends "base.html" %}
+{% extends "keel/layouts/landing.html" %}
 {% load static %}
 
-{% block main_class %}{% endblock %}
+{% block landing_hero_description %}
+One sign-in, every product, all your intelligence in one place.
+Helm aggregates dashboards, alerts, and action items from across the
+entire DockLabs fleet — built for executives and program directors who
+need a single view of agency operations.
+{% endblock %}
 
-{% block content %}
-{# Hero Section #}
-<div class="bg-primary text-white py-5">
-    <div class="container text-center">
-        <div class="mb-3">
-            <i class="bi bi-compass display-3"></i>
-        </div>
-        <h1 class="fw-bold display-5">Helm</h1>
-        <p class="lead mb-4">Executive Dashboard for the DockLabs Fleet</p>
-        <p class="text-white-50 mb-4">One sign-in. Every product. All your intelligence in one place.</p>
-        <a href="{% url 'account_login' %}" class="btn btn-light btn-lg me-2">
-            <i class="bi bi-box-arrow-in-right me-2"></i>Sign In
-        </a>
-    </div>
-</div>
+{% block dashboard_url %}{% url 'dashboard' %}{% endblock %}
 
-{# Fleet Grid #}
-<div class="container py-5">
-    <h4 class="text-center fw-bold mb-4">The DockLabs Fleet</h4>
+{% block landing_stats %}
+{% include "keel/landing/_stats_bar.html" with stats=landing_stats %}
+{% endblock %}
+
+{% block landing_features %}
+{% include "keel/landing/_features.html" with title="Built for the Whole Fleet" features=landing_features %}
+{% endblock %}
+
+{% block landing_how_it_works %}
+{% include "keel/landing/_how_it_works.html" with steps=landing_steps %}
+{% endblock %}
+
+{% block landing_extra %}
+{% if FLEET_PRODUCTS %}
+<section class="landing-section">
+  <div class="container">
+    <h2 class="text-center">The DockLabs Fleet</h2>
+    <p class="section-intro">Every product you manage, accessible from one signed-in session.</p>
     <div class="row g-3 justify-content-center">
-        {% for product in fleet_products %}
-        <div class="col-6 col-md-4 col-lg-3">
-            <div class="card border-0 shadow-sm text-center h-100">
-                <div class="card-body py-4">
-                    <i class="{{ product.icon }} fs-2 text-primary d-block mb-2"></i>
-                    <h6 class="fw-bold mb-1">{{ product.label }}</h6>
-                    <small class="text-muted">{{ product.tagline }}</small>
-                </div>
+      {% for product in FLEET_PRODUCTS %}
+      <div class="col-6 col-md-4 col-lg-3">
+        <a href="{{ product.url|default:'#' }}" class="text-decoration-none">
+          <div class="feature-card" style="padding: 1.5rem 1rem;">
+            <div class="feature-icon">
+              <i class="bi {{ product.icon|default:'bi-app' }}"></i>
             </div>
-        </div>
-        {% endfor %}
+            <h5 class="mb-1">{{ product.label|default:product.name }}</h5>
+          </div>
+        </a>
+      </div>
+      {% endfor %}
     </div>
-</div>
+  </div>
+</section>
+{% endif %}
 {% endblock %}

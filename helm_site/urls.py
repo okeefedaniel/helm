@@ -1,6 +1,6 @@
 """Helm URL Configuration."""
 from django.contrib import admin
-from django.contrib.auth.views import LoginView, LogoutView
+from django.contrib.auth.views import LoginView
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
@@ -8,7 +8,7 @@ from django.views.generic import RedirectView, TemplateView
 
 from dashboard.views import DashboardView
 
-from keel.core.views import health_check, robots_txt, LandingView
+from keel.core.views import health_check, robots_txt, LandingView, SuiteLogoutView
 from keel.core.demo import demo_login_view
 from core.forms import LoginForm
 
@@ -56,7 +56,7 @@ urlpatterns = [
         template_name='account/login.html',
         authentication_form=LoginForm,
     ), name='account_login'),
-    path('accounts/logout/', LogoutView.as_view(), name='account_logout'),
+    path('accounts/logout/', SuiteLogoutView.as_view(), name='account_logout'),
     # Allauth handles everything else (signup, SSO, MFA, password reset)
     path('accounts/', include('allauth.urls')),
     # Keel shared

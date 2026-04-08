@@ -62,6 +62,11 @@ urlpatterns = [
     path('keel/requests/', include('keel.requests.urls')),
     # Helm apps
     path('helm/', include('dashboard.urls')),
+    # Canonical suite-wide post-login URL. All LOGIN_REDIRECT_URL / SSO
+    # landings point at /dashboard/ so every DockLabs product behaves the
+    # same way. For Helm specifically this redirects into /helm/ which
+    # is where the actual dashboard app lives.
+    path('dashboard/', RedirectView.as_view(url='/helm/', permanent=False), name='dashboard_alias'),
     path('api/', include('api.urls')),
 ]
 

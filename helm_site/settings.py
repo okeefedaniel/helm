@@ -143,7 +143,7 @@ DATABASES = {
 # ---------------------------------------------------------------------------
 AUTH_USER_MODEL = 'keel_accounts.KeelUser'
 LOGIN_URL = '/accounts/login/'
-LOGIN_REDIRECT_URL = '/helm/'
+LOGIN_REDIRECT_URL = '/dashboard/'
 LOGOUT_REDIRECT_URL = '/accounts/login/'
 
 AUTH_PASSWORD_VALIDATORS = [

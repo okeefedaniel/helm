@@ -6,6 +6,8 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.views.generic import RedirectView, TemplateView
 
+from dashboard.views import DashboardView
+
 from keel.core.views import health_check, robots_txt, LandingView
 from keel.core.demo import demo_login_view
 from core.forms import LoginForm
@@ -62,11 +64,10 @@ urlpatterns = [
     path('keel/requests/', include('keel.requests.urls')),
     # Helm apps
     path('helm/', include('dashboard.urls')),
-    # Canonical suite-wide post-login URL. All LOGIN_REDIRECT_URL / SSO
-    # landings point at /dashboard/ so every DockLabs product behaves the
-    # same way. For Helm specifically this redirects into /helm/ which
-    # is where the actual dashboard app lives.
-    path('dashboard/', RedirectView.as_view(url='/helm/', permanent=False), name='dashboard_alias'),
+    # Canonical suite-wide post-login URL. Mounts the real DashboardView
+    # directly so the URL bar stays at /dashboard/. The legacy /helm/
+    # URL still works for direct navigation.
+    path('dashboard/', DashboardView.as_view(), name='dashboard_alias'),
     path('api/', include('api.urls')),
 ]
 

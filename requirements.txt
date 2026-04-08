@@ -10,4 +10,4 @@ whitenoise>=6.5,<7.0
 gunicorn>=21.2,<23.0
 django-allauth[mfa,socialaccount]>=65.0,<66.0
 reportlab>=4.0,<5.0
-keel @ git+https://github.com/okeefedaniel/keel.git@748c27b1032aa6dc817673bea112beba4bdd35dc
+keel @ git+https://github.com/okeefedaniel/keel.git@30f3c41

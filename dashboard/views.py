@@ -15,6 +15,12 @@ class DashboardView(LoginRequiredMixin, TemplateView):
     """Main executive dashboard — the single-page overview."""
     template_name = 'dashboard/index.html'
 
+    def get(self, request, *args, **kwargs):
+        response = super().get(request, *args, **kwargs)
+        # Mark session so the welcome greeting only shows once per session
+        request.session['helm_greeted'] = True
+        return response
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         agg = _aggregator_for(self.request.user)

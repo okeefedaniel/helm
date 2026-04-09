@@ -4,6 +4,21 @@
 {% block title %}Dashboard{% endblock %}
 
 {% block content %}
+{# === Welcome greeting (auto-fades after 4s, only shows once per session) === #}
+{% if not request.session.helm_greeted %}
+<div id="helm-greeting" class="mb-3" style="transition: opacity 0.8s ease-out;">
+    <h2 class="h4 mb-0 text-muted">Welcome back, {{ user.get_full_name|default:user.username }}</h2>
+</div>
+<script>
+(function(){
+    setTimeout(function(){
+        var el = document.getElementById('helm-greeting');
+        if(el){ el.style.opacity='0'; setTimeout(function(){ el.remove(); }, 800); }
+    }, 4000);
+})();
+</script>
+{% endif %}
+
 {# === Row 1: Period bar + compact product launcher (single row) === #}
 <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
     <div class="d-flex align-items-center gap-3">

@@ -10,6 +10,7 @@ from dashboard.views import DashboardView
 
 from keel.core.views import health_check, robots_txt, LandingView, SuiteLogoutView
 from keel.core.demo import demo_login_view
+from keel.core.search_views import search_view
 from core.forms import LoginForm
 
 from django.utils.translation import gettext_lazy as _
@@ -61,6 +62,7 @@ urlpatterns = [
     path('accounts/', include('allauth.urls')),
     # Keel shared
     path('notifications/', include('keel.notifications.urls')),
+    path('search/', search_view, name='search'),
     path('keel/requests/', include('keel.requests.urls')),
     # Helm apps
     path('helm/', include('dashboard.urls')),

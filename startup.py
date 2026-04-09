@@ -108,17 +108,25 @@ def main():
     if os.environ.get('CREATE_SUPERUSER', '').lower() in ('true', '1', 'yes'):
         run(f"{manage} ensure_superuser")
 
-    # Seed demo data if no feeds exist yet
-    log("=== Checking seed data ===")
+    # Fetch live feeds from products (or fall back to seed data)
+    log("=== Populating feed data ===")
     try:
-        from dashboard.models import CachedFeedSnapshot
-        if CachedFeedSnapshot.objects.count() == 0:
-            log("No feed data found, seeding demo data...")
-            run(f"{manage} seed_helm")
+        from django.conf import settings as _settings
+        helm_feed_key = getattr(_settings, 'HELM_FEED_API_KEY', '')
+        demo_mode = getattr(_settings, 'DEMO_MODE', False)
+
+        if helm_feed_key and not demo_mode:
+            log("HELM_FEED_API_KEY set — fetching live feeds from products...")
+            run(f"{manage} fetch_feeds --parallel")
         else:
-            log(f"Feed data exists ({CachedFeedSnapshot.objects.count()} products), skipping seed")
+            from dashboard.models import CachedFeedSnapshot
+            if CachedFeedSnapshot.objects.count() == 0:
+                log("No feed data found, seeding demo data...")
+                run(f"{manage} seed_helm")
+            else:
+                log(f"Feed data exists ({CachedFeedSnapshot.objects.count()} products)")
     except Exception as e:
-        log(f"Seed check failed: {e}")
+        log(f"Feed population failed: {e}")
 
     log("=== Startup complete, waiting for gunicorn ===")
     gunicorn_proc.wait()

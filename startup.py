@@ -113,15 +113,19 @@ def main():
     try:
         from django.conf import settings as _settings
         helm_feed_key = getattr(_settings, 'HELM_FEED_API_KEY', '')
-        demo_mode = getattr(_settings, 'DEMO_MODE', False)
 
-        if helm_feed_key and not demo_mode:
+        if helm_feed_key:
+            # Always fetch when key is present — works for both prod and demo.
+            # Products bypass auth in DEMO_MODE, so the same key works everywhere.
             log("HELM_FEED_API_KEY set — fetching live feeds from products...")
-            run(f"{manage} fetch_feeds --parallel")
+            ok = run(f"{manage} fetch_feeds --parallel")
+            if not ok:
+                log("Live fetch had errors — falling back to seed data for unfetched products")
+                run(f"{manage} seed_helm")
         else:
             from dashboard.models import CachedFeedSnapshot
             if CachedFeedSnapshot.objects.count() == 0:
-                log("No feed data found, seeding demo data...")
+                log("No API key and no feed data — seeding demo data...")
                 run(f"{manage} seed_helm")
             else:
                 log(f"Feed data exists ({CachedFeedSnapshot.objects.count()} products)")

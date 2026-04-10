@@ -19,7 +19,7 @@
 </script>
 {% endif %}
 
-{# === Row 1: Period bar + compact product launcher (single row) === #}
+{# === Row 1: Period bar + fleet health + compact product launcher === #}
 <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
     <div class="d-flex align-items-center gap-3">
         <span class="fw-semibold text-muted small">
@@ -40,7 +40,12 @@
     </div>
 </div>
 
-{# === Row 2: Action queue (left) + Alerts (right) — above the fold === #}
+{# === Row 2: Product metrics grid — the hero section === #}
+<div class="mb-3" hx-get="{% url 'dashboard:partial-metrics' %}" hx-trigger="every 60s" hx-swap="innerHTML">
+    {% include "partials/metrics_grid.html" %}
+</div>
+
+{# === Row 3: Action summary (left) + Alerts (right) — compact strip === #}
 <div class="row g-3 mb-3">
     <div class="col-lg-8">
         <div hx-get="{% url 'dashboard:partial-action-queue' %}" hx-trigger="every 30s" hx-swap="innerHTML">
@@ -54,12 +59,48 @@
     </div>
 </div>
 
-{# === Row 3: Metrics grid — compact 3-up or 4-up cards === #}
-<div hx-get="{% url 'dashboard:partial-metrics' %}" hx-trigger="every 60s" hx-swap="innerHTML">
-    {% include "partials/metrics_grid.html" %}
+{# === Row 4: Full action queue (collapsed, expandable) === #}
+{% if has_more_actions %}
+<div class="mb-3">
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-white border-bottom py-2 d-flex justify-content-between align-items-center">
+            <h6 class="mb-0 small">
+                <i class="bi bi-list-check text-muted me-1"></i>All Action Items
+                <span class="badge bg-secondary ms-1" style="font-size:.65rem;">{{ action_items_count }}</span>
+            </h6>
+            <button class="btn btn-sm btn-link text-muted p-0" type="button" data-bs-toggle="collapse" data-bs-target="#allActionsList" aria-expanded="false">
+                <span class="small">Show all</span>
+                <i class="bi bi-chevron-down" style="font-size:.75rem;"></i>
+            </button>
+        </div>
+        <div class="collapse" id="allActionsList">
+            <div class="list-group list-group-flush" style="max-height: 400px; overflow-y: auto;">
+                {% for item in action_items %}
+                <a href="{{ item.deep_link }}" class="list-group-item list-group-item-action py-2 px-3 d-flex align-items-center{% if item.priority == 'critical' %} list-group-item-danger{% elif item.priority == 'high' %} list-group-item-warning{% endif %}" target="_blank" rel="noopener">
+                    <i class="{{ item.product_icon|default:'bi-app' }} text-muted me-3" style="font-size:.9rem;"></i>
+                    <div class="flex-grow-1 me-2" style="min-width:0;">
+                        <div class="fw-semibold small text-truncate">{{ item.title }}</div>
+                        {% if item.description %}
+                        <div class="text-muted" style="font-size:.7rem;">{{ item.description|truncatewords:10 }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="text-end flex-shrink-0">
+                        <span class="badge bg-{{ item.priority|priority_class }}" style="font-size:.6rem;">{{ item.type|title }}</span>
+                        {% if item.due_date %}
+                        <div class="text-muted" style="font-size:.65rem;">
+                            <i class="bi bi-clock"></i> {{ item.due_date|truncatechars:10 }}
+                        </div>
+                        {% endif %}
+                    </div>
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
 </div>
+{% endif %}
 
-{# === Row 4: Bookmarks (if any) === #}
+{# === Row 5: Bookmarks (if any) === #}
 {% if bookmarks %}
 <div class="mt-3">
     <div class="card border-0 shadow-sm">

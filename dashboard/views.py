@@ -21,12 +21,18 @@ class DashboardView(LoginRequiredMixin, TemplateView):
         request.session['helm_greeted'] = True
         return response
 
+    # Max action items shown in the above-the-fold summary strip
+    ACTION_ITEM_SUMMARY_LIMIT = 5
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         agg = _aggregator_for(self.request.user)
 
-        context['action_items'] = agg.get_all_action_items()
-        context['action_items_count'] = len(context['action_items'])
+        all_actions = agg.get_all_action_items()
+        context['action_items'] = all_actions
+        context['action_items_count'] = len(all_actions)
+        context['top_action_items'] = all_actions[:self.ACTION_ITEM_SUMMARY_LIMIT]
+        context['has_more_actions'] = len(all_actions) > self.ACTION_ITEM_SUMMARY_LIMIT
         context['alerts'] = agg.get_all_alerts()
         context['alerts_count'] = len(context['alerts'])
         context['metrics_by_product'] = agg.get_metrics_by_product()
@@ -106,8 +112,12 @@ class ActionQueuePartialView(LoginRequiredMixin, TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         agg = _aggregator_for(self.request.user)
-        context['action_items'] = agg.get_all_action_items()
-        context['action_items_count'] = len(context['action_items'])
+        all_actions = agg.get_all_action_items()
+        limit = DashboardView.ACTION_ITEM_SUMMARY_LIMIT
+        context['action_items'] = all_actions
+        context['action_items_count'] = len(all_actions)
+        context['top_action_items'] = all_actions[:limit]
+        context['has_more_actions'] = len(all_actions) > limit
         return context
 
 

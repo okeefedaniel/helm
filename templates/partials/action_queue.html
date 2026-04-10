@@ -1,5 +1,5 @@
 {% load helm_tags %}
-<div class="card border-0 shadow-sm">
+<div class="card border-0 shadow-sm h-100">
     <div class="card-header bg-white border-bottom py-2 d-flex justify-content-between align-items-center">
         <h6 class="mb-0 small">
             <i class="bi bi-lightning-charge text-warning me-1"></i>Action Queue
@@ -7,38 +7,42 @@
             <span class="badge bg-warning text-dark ms-1" style="font-size:.65rem;">{{ action_items_count }}</span>
             {% endif %}
         </h6>
-        <button class="btn btn-sm btn-link text-muted p-0" type="button" data-bs-toggle="collapse" data-bs-target="#actionList">
-            <i class="bi bi-chevron-expand" style="font-size:.75rem;"></i>
+    </div>
+    {% with items=top_action_items|default:action_items %}
+    {% if items %}
+    <div class="list-group list-group-flush">
+        {% for item in items %}
+        <a href="{{ item.deep_link }}" class="list-group-item list-group-item-action py-2 px-3 d-flex align-items-center{% if item.priority == 'critical' %} list-group-item-danger{% elif item.priority == 'high' %} list-group-item-warning{% endif %}" target="_blank" rel="noopener">
+            <i class="{{ item.product_icon|default:'bi-app' }} text-muted me-3" style="font-size:.9rem;"></i>
+            <div class="flex-grow-1 me-2" style="min-width:0;">
+                <div class="fw-semibold small text-truncate">{{ item.title }}</div>
+                {% if item.description %}
+                <div class="text-muted" style="font-size:.7rem;">{{ item.description|truncatewords:10 }}</div>
+                {% endif %}
+            </div>
+            <div class="text-end flex-shrink-0">
+                <span class="badge bg-{{ item.priority|priority_class }}" style="font-size:.6rem;">{{ item.type|title }}</span>
+                {% if item.due_date %}
+                <div class="text-muted" style="font-size:.65rem;">
+                    <i class="bi bi-clock"></i> {{ item.due_date|truncatechars:10 }}
+                </div>
+                {% endif %}
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+    {% if has_more_actions %}
+    <div class="card-footer bg-white border-top py-2 text-center">
+        <button class="btn btn-sm btn-link text-muted p-0" type="button" data-bs-toggle="collapse" data-bs-target="#allActionsList">
+            <small>View all {{ action_items_count }} items <i class="bi bi-chevron-down"></i></small>
         </button>
     </div>
-    <div class="collapse show" id="actionList">
-        {% if action_items %}
-        <div class="list-group list-group-flush">
-            {% for item in action_items %}
-            <a href="{{ item.deep_link }}" class="list-group-item list-group-item-action py-2 px-3 d-flex align-items-center{% if item.priority == 'critical' %} list-group-item-danger{% elif item.priority == 'high' %} list-group-item-warning{% endif %}" target="_blank" rel="noopener">
-                <i class="{{ item.product_icon|default:'bi-app' }} text-muted me-3" style="font-size:.9rem;"></i>
-                <div class="flex-grow-1 me-2" style="min-width:0;">
-                    <div class="fw-semibold small text-truncate">{{ item.title }}</div>
-                    {% if item.description %}
-                    <div class="text-muted" style="font-size:.7rem;">{{ item.description|truncatewords:10 }}</div>
-                    {% endif %}
-                </div>
-                <div class="text-end flex-shrink-0">
-                    <span class="badge bg-{{ item.priority|priority_class }}" style="font-size:.6rem;">{{ item.type|title }}</span>
-                    {% if item.due_date %}
-                    <div class="text-muted" style="font-size:.65rem;">
-                        <i class="bi bi-clock"></i> {{ item.due_date|truncatechars:10 }}
-                    </div>
-                    {% endif %}
-                </div>
-            </a>
-            {% endfor %}
-        </div>
-        {% else %}
-        <div class="card-body text-center text-muted py-3">
-            <i class="bi bi-check-circle d-block mb-1"></i>
-            <small>All clear — no pending actions.</small>
-        </div>
-        {% endif %}
+    {% endif %}
+    {% else %}
+    <div class="card-body text-center text-muted py-3">
+        <i class="bi bi-check-circle d-block mb-1"></i>
+        <small>All clear — no pending actions.</small>
     </div>
+    {% endif %}
+    {% endwith %}
 </div>

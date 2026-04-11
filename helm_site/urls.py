@@ -20,6 +20,8 @@ admin.site.site_title = _('Helm Admin')
 admin.site.index_title = _('Executive Dashboard')
 
 urlpatterns = [
+    # Support (shared keel page — linked from 500.html)
+    path('support/', TemplateView.as_view(template_name='keel/support.html'), name='support'),
     path('robots.txt', robots_txt, name='robots_txt'),
     path('health/', health_check, name='health_check'),
     path('demo-login/', demo_login_view, name='demo_login'),

@@ -83,6 +83,10 @@ class CachedFeedSnapshot(KeelBaseModel):
     fetch_duration_ms = models.IntegerField(default=0)
     is_stale = models.BooleanField(default=False)
     last_error = models.TextField(blank=True)
+    consecutive_failures = models.IntegerField(default=0)
+    # When set to a future timestamp, the circuit breaker is "open" and
+    # fetch_feeds will skip this product until the cooldown elapses.
+    circuit_open_until = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         ordering = ['product']

@@ -1,9 +1,26 @@
 """Helm dashboard views."""
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.utils import timezone
 from django.views.generic import TemplateView
 
 from .models import CachedFeedSnapshot, DashboardBookmark
 from .services import FeedAggregator, get_user_product_keys
+
+
+def _current_period_context():
+    """Build the header period label (fiscal year + current month).
+
+    CT's fiscal year runs July–June, so FY2026 covers July 2025 through
+    June 2026. The label follows the calendar month the dashboard is
+    viewed in — no hardcoded month strings.
+    """
+    now = timezone.localtime()
+    fiscal_year = now.year + 1 if now.month >= 7 else now.year
+    return {
+        'period_fiscal_year': f'FY{fiscal_year}',
+        'period_month': now.strftime('%B'),
+        'period_status': 'Under Review',
+    }
 
 
 def _aggregator_for(user):
@@ -40,6 +57,7 @@ class DashboardView(LoginRequiredMixin, TemplateView):
         context['bookmarks'] = DashboardBookmark.objects.filter(
             user=self.request.user, is_active=True
         )[:10]
+        context.update(_current_period_context())
         return context
 
 

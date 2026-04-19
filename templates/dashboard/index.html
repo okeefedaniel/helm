@@ -23,9 +23,9 @@
 <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
     <div class="d-flex align-items-center gap-3">
         <span class="fw-semibold text-muted small">
-            <i class="bi bi-calendar3 me-1"></i>FY2026
+            <i class="bi bi-calendar3 me-1"></i>{{ period_fiscal_year|default:"FY2026" }}
         </span>
-        <span class="text-muted small">March &middot; Under Review</span>
+        <span class="text-muted small">{{ period_month|default:"" }}{% if period_month %} &middot; {% endif %}{{ period_status|default:"Under Review" }}</span>
         <span class="badge fleet-health-{{ fleet_health|default:'gray' }}">
             <i class="bi bi-heart-pulse me-1"></i>{{ fleet_health|default:"—" }}
         </span>

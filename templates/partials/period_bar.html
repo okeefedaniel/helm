@@ -4,8 +4,8 @@
         <span class="fw-semibold text-muted small">
             <i class="bi bi-calendar3 me-1"></i>Fiscal Period
         </span>
-        <span class="badge bg-primary">FY2026</span>
-        <span class="text-muted small">March &middot; Under Review</span>
+        <span class="badge bg-primary">{{ period_fiscal_year|default:"FY2026" }}</span>
+        <span class="text-muted small">{{ period_month|default:"" }}{% if period_month %} &middot; {% endif %}{{ period_status|default:"Under Review" }}</span>
     </div>
     <div class="d-flex align-items-center gap-2">
         <span class="badge fleet-health-{{ fleet_health|default:'gray' }}">

@@ -4,7 +4,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from dashboard.services import FeedAggregator
+from dashboard.services import FeedAggregator, get_user_product_keys
 from .serializers import BriefingSerializer
 
 
@@ -17,7 +17,7 @@ class BriefingAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        agg = FeedAggregator()
+        agg = FeedAggregator(product_keys=get_user_product_keys(request.user))
         data = agg.get_briefing_data(request.user)
 
         data['briefing_date'] = timezone.now().date().isoformat()
@@ -52,7 +52,7 @@ class DashboardDataAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        agg = FeedAggregator()
+        agg = FeedAggregator(product_keys=get_user_product_keys(request.user))
         return Response({
             'metrics_by_product': agg.get_metrics_by_product(),
             'action_items': agg.get_all_action_items(),

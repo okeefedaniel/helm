@@ -45,3 +45,12 @@ class CoreConfig(AppConfig):
             default_roles=['executive', 'program_director'],
             priority='high',
         ))
+
+        # -- Register Helm models for signal-based audit logging --
+        from keel.core.audit_signals import register_audited_model, connect_audit_signals
+
+        register_audited_model('dashboard.DashboardBookmark', 'Dashboard Bookmark')
+        register_audited_model('dashboard.BriefingPreference', 'Briefing Preference')
+        register_audited_model('dashboard.UserDashboardLayout', 'Dashboard Layout')
+
+        connect_audit_signals()

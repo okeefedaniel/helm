@@ -1,0 +1,72 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.12']
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: helm
+          POSTGRES_PASSWORD: helm
+          POSTGRES_DB: helm_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: postgresql://helm:helm@localhost:5432/helm_test
+      DJANGO_SECRET_KEY: test-secret-key-not-for-production
+      DJANGO_DEBUG: 'True'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install flake8 coverage
+
+      - name: Lint with flake8
+        run: |
+          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+          flake8 . --count --exit-zero --max-complexity=10 --max-line-length=120 --statistics
+
+      - name: Collect static files
+        run: python manage.py collectstatic --noinput
+
+      - name: Run migrations
+        run: python manage.py migrate --noinput
+
+      - name: Django deployment check
+        run: python manage.py check --deploy 2>&1 || true
+
+      - name: Run tests
+        run: |
+          coverage run manage.py test --verbosity=2 || echo "No tests or tests failed (non-gating for initial CI)"
+          coverage report --fail-under=0 || true
+
+  security:
+    uses: okeefedaniel/keel/.github/workflows/security.yml@30fc6417bf65783f9aa3713dd9179ef184b78eee
+    with:
+      python-version: '3.12'

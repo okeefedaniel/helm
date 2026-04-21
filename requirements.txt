@@ -11,4 +11,4 @@ gunicorn>=22.0,<24.0
 django-allauth[mfa,socialaccount]>=65.0,<66.0
 reportlab>=4.0,<5.0
 requests>=2.31,<3.0
-keel @ git+https://github.com/okeefedaniel/keel.git@7fdb42969b2ec8fe94a80cc418995a9d91ca5296
+keel @ git+https://github.com/okeefedaniel/keel.git@4fc57217e2b82b44833c572a803f51fdf13a70c7

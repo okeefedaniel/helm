@@ -18,7 +18,8 @@
     <div class="card-body py-2 px-3">
         {% if card.metrics %}
         {% for metric in card.metrics %}
-        <div class="d-flex justify-content-between align-items-center{% if not forloop.last %} mb-1 pb-1 border-bottom{% endif %}">
+        {% if metric.deep_link %}<a href="{{ metric.deep_link }}" target="_blank" rel="noopener" class="text-decoration-none text-reset d-block">{% endif %}
+        <div class="d-flex justify-content-between align-items-center{% if not forloop.last %} mb-1 pb-1 border-bottom{% endif %}{% if metric.deep_link %} metric-row-link{% endif %}">
             <span class="text-muted" style="font-size:.75rem;">{{ metric.label }}</span>
             <span class="fw-bold{% if metric.severity != 'normal' %} text-{{ metric.severity|severity_class }}{% endif %}">
                 {{ metric|metric_value }}
@@ -27,6 +28,7 @@
                 {% endif %}
             </span>
         </div>
+        {% if metric.deep_link %}</a>{% endif %}
         {% endfor %}
         {% if card.sparklines %}
         {% for spark_key, spark_data in card.sparklines.items %}

@@ -4,11 +4,11 @@
         <span class="fw-semibold text-muted small">
             <i class="bi bi-calendar3 me-1"></i>Fiscal Period
         </span>
-        <span class="badge bg-primary">{{ period_fiscal_year|default:"FY2026" }}</span>
+        <span class="pill pill-navy">{{ period_fiscal_year|default:"FY2026" }}</span>
         <span class="text-muted small">{{ period_month|default:"" }}{% if period_month %} &middot; {% endif %}{{ period_status|default:"Under Review" }}</span>
     </div>
     <div class="d-flex align-items-center gap-2">
-        <span class="badge fleet-health-{{ fleet_health|default:'gray' }}">
+        <span class="pill fleet-health-{{ fleet_health|default:'gray' }}">
             <i class="bi bi-heart-pulse me-1"></i>Fleet: {{ fleet_health|default:"—" }}
         </span>
     </div>

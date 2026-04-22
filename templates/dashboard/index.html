@@ -26,7 +26,7 @@
             <i class="bi bi-calendar3 me-1"></i>{{ period_fiscal_year|default:"FY2026" }}
         </span>
         <span class="text-muted small">{{ period_month|default:"" }}{% if period_month %} &middot; {% endif %}{{ period_status|default:"Under Review" }}</span>
-        <span class="badge fleet-health-{{ fleet_health|default:'gray' }}">
+        <span class="pill fleet-health-{{ fleet_health|default:'gray' }}">
             <i class="bi bi-heart-pulse me-1"></i>{{ fleet_health|default:"—" }}
         </span>
     </div>
@@ -66,7 +66,7 @@
         <div class="card-header bg-white border-bottom py-2 d-flex justify-content-between align-items-center">
             <h6 class="mb-0 small">
                 <i class="bi bi-list-check text-muted me-1"></i>All Action Items
-                <span class="badge bg-secondary ms-1" style="font-size:.65rem;">{{ action_items_count }}</span>
+                <span class="pill pill-muted ms-1" style="font-size:.65rem;">{{ action_items_count }}</span>
             </h6>
             <button class="btn btn-sm btn-link text-muted p-0" type="button" data-bs-toggle="collapse" data-bs-target="#allActionsList" aria-expanded="false">
                 <span class="small">Show all</span>
@@ -85,7 +85,7 @@
                         {% endif %}
                     </div>
                     <div class="text-end flex-shrink-0">
-                        <span class="badge bg-{{ item.priority|priority_class }}" style="font-size:.6rem;">{{ item.type|title }}</span>
+                        <span class="pill bg-{{ item.priority|priority_class }}" style="font-size:.6rem;">{{ item.type|title }}</span>
                         {% if item.due_date %}
                         <div class="text-muted" style="font-size:.65rem;">
                             <i class="bi bi-clock"></i> {{ item.due_date|truncatechars:10 }}
@@ -110,7 +110,7 @@
         <div class="card-body p-2">
             <div class="d-flex flex-wrap gap-2">
                 {% for bm in bookmarks %}
-                <a href="{{ bm.deep_link }}" class="badge bg-light text-dark text-decoration-none border py-2 px-3" target="_blank" rel="noopener">
+                <a href="{{ bm.deep_link }}" class="pill pill-muted text-decoration-none border py-2 px-3" target="_blank" rel="noopener">
                     <small class="text-muted">{{ bm.product|upper }}</small> {{ bm.item_label|truncatewords:6 }}
                 </a>
                 {% endfor %}

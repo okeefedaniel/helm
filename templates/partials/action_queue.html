@@ -4,7 +4,7 @@
         <h6 class="mb-0 small">
             <i class="bi bi-lightning-charge text-warning me-1"></i>Action Queue
             {% if action_items_count %}
-            <span class="badge bg-warning text-dark ms-1" style="font-size:.65rem;">{{ action_items_count }}</span>
+            <span class="pill pill-brass ms-1" style="font-size:.65rem;">{{ action_items_count }}</span>
             {% endif %}
         </h6>
     </div>
@@ -21,7 +21,7 @@
                 {% endif %}
             </div>
             <div class="text-end flex-shrink-0">
-                <span class="badge bg-{{ item.priority|priority_class }}" style="font-size:.6rem;">{{ item.type|title }}</span>
+                <span class="pill bg-{{ item.priority|priority_class }}" style="font-size:.6rem;">{{ item.type|title }}</span>
                 {% if item.due_date %}
                 <div class="text-muted" style="font-size:.65rem;">
                     <i class="bi bi-clock"></i> {{ item.due_date|truncatechars:10 }}

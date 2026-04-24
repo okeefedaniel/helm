@@ -1,0 +1,53 @@
+{% load tasks_tags %}
+<div class="row g-2 task-board" id="task-board">
+    {% for status, label, tasks in columns %}
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white border-bottom py-2 d-flex align-items-center">
+                <span class="pill bg-{{ status|status_pill }} me-2" style="font-size:.6rem;">{{ label }}</span>
+                <small class="text-muted ms-auto">{{ tasks|length }}</small>
+            </div>
+            <div class="card-body p-2 board-column" data-status="{{ status }}" style="min-height:120px;">
+                {% for task in tasks %}
+                {% include "tasks/partials/task_card.html" with task=task %}
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
+<script>
+(function(){
+    var cols = document.querySelectorAll('.board-column');
+    cols.forEach(function(col){
+        new Sortable(col, {
+            group: 'tasks',
+            animation: 150,
+            ghostClass: 'board-card-ghost',
+            onEnd: function(evt){
+                var card = evt.item;
+                var id = card.dataset.taskId;
+                var newStatus = evt.to.dataset.status;
+                var newPos = evt.newIndex;
+                var token = document.querySelector('[name=csrfmiddlewaretoken]').value;
+                var data = new FormData();
+                data.append('status', newStatus);
+                data.append('position', newPos);
+                fetch('/tasks/t/' + id + '/reorder/', {
+                    method: 'POST',
+                    headers: {'X-CSRFToken': token},
+                    body: data,
+                });
+            }
+        });
+    });
+})();
+</script>
+<form style="display:none">{% csrf_token %}</form>
+
+<style>
+.task-board .board-column .card { cursor: grab; }
+.task-board .board-card-ghost { opacity: .4; }
+</style>

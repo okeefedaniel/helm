@@ -11,8 +11,8 @@
     {% if alerts %}
     <div class="list-group list-group-flush" style="max-height: 300px; overflow-y: auto;">
         {% for alert in alerts %}
-        <a href="{{ alert.deep_link }}" class="list-group-item list-group-item-action py-2 px-3{% if alert.severity == 'critical' %} list-group-item-danger{% elif alert.severity == 'warning' %} list-group-item-warning{% endif %}" target="_blank" rel="noopener">
-            <div class="d-flex align-items-start gap-2">
+        <div class="list-group-item py-2 px-3 d-flex align-items-start gap-2{% if alert.severity == 'critical' %} list-group-item-danger{% elif alert.severity == 'warning' %} list-group-item-warning{% endif %}">
+            <a href="{{ alert.deep_link }}" class="d-flex align-items-start gap-2 flex-grow-1 text-decoration-none text-body" style="min-width:0;" target="_blank" rel="noopener">
                 <i class="{{ alert.product_icon|default:'bi-app' }} text-muted" style="font-size:.8rem; margin-top:2px;"></i>
                 <div style="min-width:0;">
                     <div class="small text-truncate">{{ alert.title }}</div>
@@ -20,8 +20,13 @@
                     <div class="text-muted" style="font-size:.65rem;">Since {{ alert.since|truncatechars:10 }}</div>
                     {% endif %}
                 </div>
-            </div>
-        </a>
+            </a>
+            {% if helm_tasks_enabled %}
+            <a class="btn btn-sm btn-link text-muted p-0" href="/tasks/promote/?title={{ alert.title|urlencode }}&product_slug={{ alert.product|default:''|urlencode }}&item_type=alert&item_id={{ alert.id|default:''|urlencode }}&url={{ alert.deep_link|urlencode }}&priority={{ alert.severity|default:'high'|urlencode }}" title="Promote to Helm task">
+                <i class="bi bi-arrow-up-right-square"></i>
+            </a>
+            {% endif %}
+        </div>
         {% endfor %}
     </div>
     {% else %}

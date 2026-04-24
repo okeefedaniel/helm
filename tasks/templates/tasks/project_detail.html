@@ -1,0 +1,35 @@
+{% extends "tasks/_base.html" %}
+{% load tasks_tags %}
+
+{% block page_title %}{{ project.name }}{% endblock %}
+
+{% block tasks_body %}
+<div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+    <div class="d-flex align-items-center gap-2">
+        <span class="pill bg-{{ project.color }}" style="font-size:.6rem;">&nbsp;</span>
+        <h3 class="h5 mb-0">{{ project.name }}</h3>
+        {% if project.archived %}<span class="pill pill-muted">Archived</span>{% endif %}
+    </div>
+    <div class="btn-group btn-group-sm" role="group">
+        <a class="btn btn-outline-secondary{% if view_mode != 'board' %} active{% endif %}" href="?view=list"><i class="bi bi-list-ul"></i> List</a>
+        <a class="btn btn-outline-secondary{% if view_mode == 'board' %} active{% endif %}" href="?view=board"><i class="bi bi-kanban"></i> Board</a>
+        <a class="btn btn-primary" href="{% url 'tasks:task_create' project.slug %}"><i class="bi bi-plus-lg"></i> New Task</a>
+    </div>
+</div>
+
+{% if project.description %}<p class="text-muted small">{{ project.description }}</p>{% endif %}
+
+{% if view_mode == 'board' %}
+    {% include "tasks/partials/board.html" %}
+{% else %}
+    <div class="card border-0 shadow-sm">
+        <div class="list-group list-group-flush">
+            {% for task in tasks %}
+            {% include "tasks/partials/task_row.html" with task=task %}
+            {% empty %}
+            <div class="px-3 py-4 text-muted small fst-italic text-center">No tasks yet. <a href="{% url 'tasks:task_create' project.slug %}">Add the first one</a>.</div>
+            {% endfor %}
+        </div>
+    </div>
+{% endif %}
+{% endblock %}

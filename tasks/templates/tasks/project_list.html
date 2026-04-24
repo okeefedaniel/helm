@@ -1,0 +1,36 @@
+{% extends "tasks/_base.html" %}
+{% load tasks_tags %}
+
+{% block page_title %}Projects{% endblock %}
+
+{% block tasks_body %}
+<div class="row g-3">
+    {% for project in projects %}
+    <div class="col-md-6 col-lg-4">
+        <a class="card border-0 shadow-sm h-100 text-decoration-none text-body" href="{{ project.get_absolute_url }}">
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-2">
+                    <span class="pill bg-{{ project.color }} me-2" style="font-size:.6rem;">&nbsp;</span>
+                    <h6 class="mb-0">{{ project.name }}</h6>
+                    {% if project.archived %}<span class="ms-auto pill pill-muted" style="font-size:.6rem;">Archived</span>{% endif %}
+                </div>
+                {% if project.description %}
+                <p class="text-muted small mb-2">{{ project.description|truncatewords:20 }}</p>
+                {% endif %}
+                <div class="d-flex gap-2 small text-muted">
+                    <span><i class="bi bi-check2-square me-1"></i>{{ project.open_count }} open</span>
+                </div>
+            </div>
+        </a>
+    </div>
+    {% empty %}
+    <div class="col-12">
+        <div class="card border-0 shadow-sm"><div class="card-body text-center text-muted py-5">
+            <i class="bi bi-collection d-block mb-2" style="font-size:2rem;"></i>
+            <p class="mb-2">No projects yet.</p>
+            <a class="btn btn-sm btn-primary" href="{% url 'tasks:project_create' %}">Create your first project</a>
+        </div></div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

@@ -1,0 +1,15 @@
+{% load tasks_tags %}
+<div class="card border mb-2" data-task-id="{{ task.pk }}">
+    <div class="card-body p-2">
+        <a class="d-block small fw-semibold text-decoration-none text-body" href="{% url 'tasks:task_detail' task.pk %}">{{ task.title }}</a>
+        <div class="d-flex align-items-center gap-1 mt-1 flex-wrap">
+            <span class="pill bg-{{ task.priority|priority_pill }}" style="font-size:.55rem;">{{ task.get_priority_display }}</span>
+            {% if task.assignee %}
+            <small class="text-muted" style="font-size:.65rem;"><i class="bi bi-person"></i> {{ task.assignee.username }}</small>
+            {% endif %}
+            {% if task.due_date %}
+            <small class="text-muted{% if task.is_overdue %} text-danger{% endif %}" style="font-size:.65rem;"><i class="bi bi-calendar3"></i> {{ task.due_date|date:"M j" }}</small>
+            {% endif %}
+        </div>
+    </div>
+</div>

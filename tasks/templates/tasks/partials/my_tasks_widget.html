@@ -1,0 +1,25 @@
+{% load tasks_tags %}
+<div class="card-header bg-white border-bottom py-2 d-flex justify-content-between align-items-center">
+    <h6 class="mb-0 small"><i class="bi bi-check2-square text-success me-1"></i>My Tasks
+        <span class="pill pill-muted ms-1" style="font-size:.65rem;">{{ tasks|length }}</span>
+    </h6>
+    <a class="small text-muted text-decoration-none" href="{% url 'tasks:my_tasks' %}">View all</a>
+</div>
+{% if tasks %}
+<div class="list-group list-group-flush">
+    {% for task in tasks %}
+    <a href="{% url 'tasks:task_detail' task.pk %}" class="list-group-item list-group-item-action py-2 px-3 d-flex align-items-center">
+        <div class="flex-grow-1 me-2" style="min-width:0;">
+            <div class="fw-semibold small text-truncate">{{ task.title }}</div>
+            <div class="text-muted" style="font-size:.7rem;">{{ task.project.name }}{% if task.due_date %} &middot; {{ task.due_date|date:"M j" }}{% endif %}</div>
+        </div>
+        <span class="pill bg-{{ task.priority|priority_pill }}" style="font-size:.6rem;">{{ task.get_priority_display }}</span>
+    </a>
+    {% endfor %}
+</div>
+{% else %}
+<div class="card-body text-center text-muted py-3">
+    <i class="bi bi-check-circle d-block mb-1"></i>
+    <small>Nothing assigned — you're clear.</small>
+</div>
+{% endif %}

@@ -1,0 +1,23 @@
+{% extends "tasks/_base.html" %}
+
+{% block page_title %}{% if task %}Edit Task{% else %}New Task{% endif %}{% endblock %}
+
+{% block tasks_body %}
+<div class="mb-2"><a href="{{ project.get_absolute_url }}" class="small text-muted text-decoration-none"><i class="bi bi-arrow-left"></i> {{ project.name }}</a></div>
+<div class="card border-0 shadow-sm">
+    <div class="card-header bg-white border-bottom py-2"><h6 class="mb-0 small">{% if task %}Edit Task{% else %}New Task{% endif %}</h6></div>
+    <div class="card-body">
+        <form method="post">{% csrf_token %}
+            {% for field in form %}
+            <div class="mb-3">
+                <label class="form-label small">{{ field.label }}</label>
+                {{ field }}
+                {% if field.errors %}<div class="text-danger small">{{ field.errors|join:", " }}</div>{% endif %}
+            </div>
+            {% endfor %}
+            <button class="btn btn-primary btn-sm" type="submit">{% if task %}Save{% else %}Create{% endif %}</button>
+            <a class="btn btn-sm btn-link" href="{{ project.get_absolute_url }}">Cancel</a>
+        </form>
+    </div>
+</div>
+{% endblock %}

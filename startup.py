@@ -119,14 +119,34 @@ def main():
             # Always fetch when key is present — works for both prod and demo.
             # Products bypass auth in DEMO_MODE, so the same key works everywhere.
             log("HELM_FEED_API_KEY set — fetching live feeds from products...")
-            ok = run(f"{manage} fetch_feeds --parallel")
+            # fetch_feeds runs in parallel by default; --sequential disables it.
+            # Earlier code passed --parallel which doesn't exist as a flag and
+            # caused every boot to fall through to seed_helm (clobbering live
+            # data with demo data). Don't reintroduce that flag.
+            ok = run(f"{manage} fetch_feeds")
             if not ok:
-                log("Live fetch had errors — falling back to seed data for unfetched products")
-                run(f"{manage} seed_helm")
+                demo_mode = getattr(_settings, 'DEMO_MODE', False)
+                debug = getattr(_settings, 'DEBUG', False)
+                if demo_mode or debug:
+                    log("Live fetch had errors — seeding demo data (DEMO_MODE/DEBUG).")
+                    run(f"{manage} seed_helm")
+                else:
+                    # Production: never overwrite live data with seed fixtures.
+                    # If a fetch fails here, the existing CachedFeedSnapshot
+                    # rows (or empty state) are kept; ops sees the warning and
+                    # can re-run fetch_feeds manually.
+                    log("Live fetch had errors — refusing to seed in production.")
         else:
             from dashboard.models import CachedFeedSnapshot
-            if CachedFeedSnapshot.objects.count() == 0:
-                log("No API key and no feed data — seeding demo data...")
+            demo_mode = getattr(_settings, 'DEMO_MODE', False)
+            debug = getattr(_settings, 'DEBUG', False)
+            if not demo_mode and not debug:
+                # Production-like env: never silently fall back to seed data.
+                # Fail loud so ops notices the missing HELM_FEED_API_KEY.
+                log("WARNING: HELM_FEED_API_KEY is not set and DEMO_MODE is off.")
+                log("Refusing to auto-seed demo data in production. Set HELM_FEED_API_KEY.")
+            elif CachedFeedSnapshot.objects.count() == 0:
+                log("No API key and no feed data — seeding demo data (DEMO_MODE/DEBUG)...")
                 run(f"{manage} seed_helm")
             else:
                 log(f"Feed data exists ({CachedFeedSnapshot.objects.count()} products)")

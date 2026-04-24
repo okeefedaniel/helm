@@ -1,0 +1,22 @@
+{% extends "tasks/_base.html" %}
+
+{% block page_title %}Promote to Task{% endblock %}
+
+{% block tasks_body %}
+<div class="card border-0 shadow-sm" style="max-width:640px;">
+    <div class="card-header bg-white border-bottom py-2"><h6 class="mb-0 small"><i class="bi bi-arrow-up-right-square me-1"></i>Promote fleet item to task</h6></div>
+    <div class="card-body">
+        <form method="post">{% csrf_token %}
+            {% for field in form %}
+            <div class="mb-3{% if field.is_hidden %} d-none{% endif %}">
+                {% if not field.is_hidden %}<label class="form-label small">{{ field.label }}</label>{% endif %}
+                {{ field }}
+                {% if field.errors %}<div class="text-danger small">{{ field.errors|join:", " }}</div>{% endif %}
+            </div>
+            {% endfor %}
+            <button class="btn btn-primary btn-sm" type="submit">Create Task</button>
+            <a class="btn btn-sm btn-link" href="{% url 'dashboard:index' %}">Cancel</a>
+        </form>
+    </div>
+</div>
+{% endblock %}

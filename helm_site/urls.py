@@ -76,5 +76,8 @@ urlpatterns = [
     path('api/', include('api.urls')),
 ]
 
+if settings.HELM_TASKS_ENABLED:
+    urlpatterns.append(path('tasks/', include('tasks.urls')))
+
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

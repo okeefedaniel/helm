@@ -59,6 +59,21 @@
     </div>
 </div>
 
+{% if helm_tasks_enabled %}
+<div class="row g-3 mb-3">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm h-100"
+             hx-get="/tasks/partials/my-tasks/" hx-trigger="load, every 60s" hx-swap="innerHTML">
+            <div class="card-header bg-white border-bottom py-2 d-flex justify-content-between align-items-center">
+                <h6 class="mb-0 small"><i class="bi bi-check2-square text-success me-1"></i>My Tasks</h6>
+                <a class="small text-muted text-decoration-none" href="/tasks/">View all</a>
+            </div>
+            <div class="card-body p-0 text-center text-muted small py-3">Loading…</div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
 {# === Row 4: Full action queue (collapsed, expandable) === #}
 {% if has_more_actions %}
 <div class="mb-3">

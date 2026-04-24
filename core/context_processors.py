@@ -3,6 +3,13 @@ from django.conf import settings
 from keel.core.context_processors import site_context  # noqa: F401
 
 
+def helm_feature_flags(request):
+    """Expose optional-feature flags to every template."""
+    return {
+        'helm_tasks_enabled': getattr(settings, 'HELM_TASKS_ENABLED', False),
+    }
+
+
 def fleet_context(request):
     """Inject fleet product registry and user access into every template context."""
     all_products = getattr(settings, 'FLEET_PRODUCTS', [])

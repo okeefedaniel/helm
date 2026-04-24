@@ -83,6 +83,18 @@ INSTALLED_APPS = [
     'api.apps.ApiConfig',
 ]
 
+# ---------------------------------------------------------------------------
+# Helm Tasks (optional feature)
+# ---------------------------------------------------------------------------
+# Enables the lightweight task management suite (projects, tasks, boards).
+# Keep off by default — deployments opt in by setting HELM_TASKS_ENABLED=true.
+# Per keel/CLAUDE.md deployment-flexibility rules: feature is fully gated —
+# when disabled, URLs don't mount, nav links are hidden, and no dashboard
+# widgets render.
+HELM_TASKS_ENABLED = os.environ.get('HELM_TASKS_ENABLED', 'False').lower() in ('true', '1', 'yes')
+if HELM_TASKS_ENABLED:
+    INSTALLED_APPS.append('tasks.apps.TasksConfig')
+
 SITE_ID = 1
 
 # ---------------------------------------------------------------------------
@@ -122,6 +134,7 @@ TEMPLATES = [
                 'keel.core.context_processors.site_context',
                 'keel.core.context_processors.fleet_context',
                 'keel.core.context_processors.breadcrumb_context',
+                'core.context_processors.helm_feature_flags',
             ],
         },
     },

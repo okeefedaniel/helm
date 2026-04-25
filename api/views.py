@@ -1,4 +1,6 @@
 """Helm API views."""
+from collections import defaultdict
+
 from django.utils import timezone
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -6,6 +8,51 @@ from rest_framework.views import APIView
 
 from dashboard.services import FeedAggregator, get_user_product_keys
 from .serializers import BriefingSerializer
+
+
+def _fund_source_rollup(user):
+    """ADD-6 — aggregate fund_sources across visible CIP projects.
+
+    Returns a list of dicts, one per fund source code, with project count,
+    total committed amount, and the list of contributing projects (slug +
+    name + amount).
+    """
+    # Lazy import to avoid the API app importing tasks at module load.
+    try:
+        from tasks.models import Project
+    except ImportError:
+        return []
+    visible = Project.objects.visible_to(user).active().filter(
+        kind=Project.Kind.CIP,
+    )
+    rollup = defaultdict(lambda: {
+        'committed_cents': 0,
+        'project_count': 0,
+        'projects': [],
+    })
+    for project in visible:
+        for fs in (project.fund_sources or []):
+            source = fs.get('source')
+            if not source:
+                continue
+            amount = int(fs.get('amount_cents') or 0)
+            entry = rollup[source]
+            entry['committed_cents'] += amount
+            entry['project_count'] += 1
+            entry['projects'].append({
+                'slug': project.slug,
+                'name': project.name,
+                'amount_cents': amount,
+            })
+    out = []
+    for source, data in sorted(rollup.items()):
+        out.append({
+            'source': source,
+            'committed_cents': data['committed_cents'],
+            'project_count': data['project_count'],
+            'projects': data['projects'],
+        })
+    return out
 
 
 class BriefingAPIView(APIView):
@@ -38,6 +85,13 @@ class BriefingAPIView(APIView):
                 data['fiscal_context'] = ''
         except Exception:
             data['fiscal_context'] = ''
+
+        # ADD-6 — opt-in fund-source rollup for executive briefings.
+        # Only included when the caller passes ?include=fund_sources to keep
+        # the default briefing payload light.
+        include = (request.GET.get('include') or '').split(',')
+        if 'fund_sources' in include:
+            data['fund_sources'] = _fund_source_rollup(request.user)
 
         serializer = BriefingSerializer(data)
         return Response(serializer.data)

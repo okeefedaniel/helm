@@ -36,6 +36,20 @@ class AlertSerializer(serializers.Serializer):
     product_label = serializers.CharField(required=False)
 
 
+class FundSourceProjectSerializer(serializers.Serializer):
+    slug = serializers.CharField()
+    name = serializers.CharField()
+    amount_cents = serializers.IntegerField()
+
+
+class FundSourceRollupSerializer(serializers.Serializer):
+    """ADD-6 — one row of the fund-source rollup."""
+    source = serializers.CharField()
+    committed_cents = serializers.IntegerField()
+    project_count = serializers.IntegerField()
+    projects = FundSourceProjectSerializer(many=True)
+
+
 class BriefingSerializer(serializers.Serializer):
     briefing_date = serializers.CharField()
     fiscal_context = serializers.CharField()
@@ -45,3 +59,5 @@ class BriefingSerializer(serializers.Serializer):
     critical_alerts = serializers.ListField(child=serializers.CharField())
     metrics_summary = serializers.DictField(child=serializers.CharField())
     fleet_health = serializers.CharField()
+    # ADD-6 — only present when ?include=fund_sources passed.
+    fund_sources = FundSourceRollupSerializer(many=True, required=False)

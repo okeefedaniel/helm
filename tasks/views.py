@@ -147,6 +147,12 @@ def project_detail(request, slug):
     available_transitions = project.WORKFLOW.get_available_transitions(
         project.status, user=request.user, obj=project,
     )
+    # ADD-7 — Granicus GovQA push: only show button on FOIA projects when
+    # the integration is configured.
+    govqa_available = False
+    if project.kind == Project.Kind.FOIA:
+        from tasks.integrations import granicus
+        govqa_available = granicus.is_available()
     context = {
         'project': project,
         'view_mode': view_mode,
@@ -158,6 +164,7 @@ def project_detail(request, slug):
                                               .select_related('user'),
         'foia_clock': foia_clock,
         'can_summarize': can_summarize(request.user, project),
+        'govqa_available': govqa_available,
     }
     if view_mode == 'board':
         context['columns'] = _group_by_status(tasks_qs)
@@ -593,6 +600,39 @@ archived_projects = ArchivedProjectsView.as_view()
 # ---------------------------------------------------------------------------
 # Phase 7 — CSV / PDF export
 # ---------------------------------------------------------------------------
+@login_required
+@project_access_required
+@workflow_view
+@require_POST
+def push_to_govqa_view(request, slug):
+    """ADD-7 — push a Helm FOIA project to Granicus GovQA.
+
+    Gated by GRANICUS_GOVQA_URL + GRANICUS_GOVQA_API_KEY settings. When
+    not configured, returns 503. LEAD-only via the workflow engine
+    role check.
+    """
+    from tasks.integrations import granicus
+    project = request.project
+    if not granicus.is_available():
+        messages.warning(
+            request,
+            'Granicus GovQA is not configured. Ask an admin to set '
+            'GRANICUS_GOVQA_URL and GRANICUS_GOVQA_API_KEY.',
+        )
+        return redirect(project.get_absolute_url())
+    workflow = project.WORKFLOW
+    if not workflow._user_has_role(
+        request.user, ['lead', 'system_admin'], obj=project,
+    ):
+        return HttpResponse(status=403)
+    success, err = granicus.push_to_govqa(project, user=request.user)
+    if success:
+        messages.success(request, 'Pushed to GovQA.')
+    else:
+        messages.error(request, f'GovQA push failed: {err}')
+    return redirect(project.get_absolute_url())
+
+
 @login_required
 @project_access_required
 def summarize_project_view(request, slug):

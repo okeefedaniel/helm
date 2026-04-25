@@ -44,6 +44,15 @@
 {% if foia_clock %}
 <div class="d-flex align-items-center gap-3 flex-wrap mb-3">
   {% include "tasks/partials/_foia_clock.html" with project=project days=foia_clock.days tier=foia_clock.tier %}
+  {% if govqa_available %}
+  <form method="post" action="{% url 'tasks:push_to_govqa' project.slug %}" class="d-inline">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-sm btn-outline-info"
+            onclick="return confirm('Push this FOIA project record to Granicus GovQA?');">
+      <i class="bi bi-cloud-upload"></i> Push to GovQA
+    </button>
+  </form>
+  {% endif %}
   {% if foia_clock.tier == 'tolled' %}
     <form method="post" action="{% url 'tasks:foia_untoll' project.slug %}" class="d-inline">
       {% csrf_token %}

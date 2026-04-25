@@ -54,6 +54,14 @@ urlpatterns = [
         name='toggle_public_visibility',
     ),
 
+    # ADD-7 — Granicus GovQA push hook (FOIA projects). LEAD-only.
+    # Gated by GRANICUS_GOVQA_URL + GRANICUS_GOVQA_API_KEY settings.
+    path(
+        'projects/<slug:slug>/govqa-push/',
+        views.push_to_govqa_view,
+        name='push_to_govqa',
+    ),
+
     # Task-level surface.
     path('t/<int:pk>/', views.task_detail, name='task_detail'),
     path('t/<int:pk>/edit/', views.task_edit, name='task_edit'),

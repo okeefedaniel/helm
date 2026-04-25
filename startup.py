@@ -159,6 +159,12 @@ def main():
     except Exception as e:
         log(f"Feed population failed: {e}")
 
+    # Demo PM data — only in DEMO_MODE so prod is never seeded.
+    # Idempotent: skips if any of the four demo project slugs already exist.
+    if os.environ.get('DEMO_MODE', '').lower() in ('true', '1', 'yes'):
+        log("=== DEMO_MODE — seeding demo project lifecycle ===")
+        run(f"{manage} seed_demo_projects", fatal=False)
+
     log("=== Startup complete, waiting for gunicorn ===")
     gunicorn_proc.wait()
     log(f"Gunicorn exited with code {gunicorn_proc.returncode}")

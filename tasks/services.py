@@ -6,27 +6,9 @@ from __future__ import annotations
 
 from django.db import transaction
 
+from keel.core.audit import log_audit
+
 from .models import Project, Task, TaskCollaborator, TaskLink
-
-
-def _audit(user, action, target, metadata=None):
-    """Best-effort audit log entry. No-op if keel audit not wired."""
-    try:
-        from core.models import AuditLog
-    except Exception:  # pragma: no cover
-        return
-    try:
-        AuditLog.objects.create(
-            user=user if (user and user.is_authenticated) else None,
-            action=action,
-            target_type=target.__class__.__name__,
-            target_id=str(getattr(target, 'pk', '')),
-            metadata=metadata or {},
-        )
-    except Exception:  # pragma: no cover
-        # AuditLog field shape may differ across keel versions. Never let
-        # logging failures break a task mutation.
-        pass
 
 
 @transaction.atomic
@@ -41,7 +23,16 @@ def create_task(*, project: Project, title: str, user, **fields) -> Task:
         position=position,
         **fields,
     )
-    _audit(user, 'task.create', task, {'title': title, 'project': project.slug})
+    _changes = {'title': title, 'project': project.slug}
+    log_audit(
+        user=user if (user and user.is_authenticated) else None,
+        action='task.create',
+        entity_type=task._meta.label,
+        entity_id=str(task.pk),
+        description=_changes.get('description', ''),
+        changes=_changes,
+        ip_address=getattr(user, 'audit_ip', None),
+    )
     return task
 
 
@@ -61,7 +52,16 @@ def update_task(task: Task, *, user, **fields) -> Task:
         changed['completed_at'] = None
     if changed:
         task.save()
-        _audit(user, 'task.update', task, {'changed': list(changed.keys())})
+        _changes = {'changed': list(changed.keys())}
+        log_audit(
+            user=user if (user and user.is_authenticated) else None,
+            action='task.update',
+            entity_type=task._meta.label,
+            entity_id=str(task.pk),
+            description=_changes.get('description', ''),
+            changes=_changes,
+            ip_address=getattr(user, 'audit_ip', None),
+        )
     return task
 
 
@@ -75,7 +75,16 @@ def reorder_task(task: Task, *, user, new_status: str, new_position: int) -> Tas
     elif new_status != Task.Status.DONE:
         task.completed_at = None
     task.save(update_fields=['status', 'position', 'completed_at', 'updated_at'])
-    _audit(user, 'task.reorder', task, {'status': new_status, 'position': new_position})
+    _changes = {'status': new_status, 'position': new_position}
+    log_audit(
+        user=user if (user and user.is_authenticated) else None,
+        action='task.reorder',
+        entity_type=task._meta.label,
+        entity_id=str(task.pk),
+        description=_changes.get('description', ''),
+        changes=_changes,
+        ip_address=getattr(user, 'audit_ip', None),
+    )
     return task
 
 
@@ -108,7 +117,16 @@ def promote_fleet_item_to_task(
         url=url,
         label=f'{product_slug.title()} — {item_type}',
     )
-    _audit(user, 'task.promote', task, {'product': product_slug, 'item_type': item_type})
+    _changes = {'product': product_slug, 'item_type': item_type}
+    log_audit(
+        user=user if (user and user.is_authenticated) else None,
+        action='task.promote',
+        entity_type=task._meta.label,
+        entity_id=str(task.pk),
+        description=_changes.get('description', ''),
+        changes=_changes,
+        ip_address=getattr(user, 'audit_ip', None),
+    )
     return task
 
 
@@ -138,8 +156,16 @@ def add_collaborator(*, task: Task, user, target_user=None, email='', role=TaskC
             task=task, email=email, defaults=defaults,
         )
     if created:
-        _audit(user, 'task.collaborator.add', task,
-               {'target': target_user.username if target_user else email, 'role': role})
+        _changes = {'target': target_user.username if target_user else email, 'role': role}
+        log_audit(
+            user=user if (user and user.is_authenticated) else None,
+            action='task.collaborator.add',
+            entity_type=task._meta.label,
+            entity_id=str(task.pk),
+            description=_changes.get('description', ''),
+            changes=_changes,
+            ip_address=getattr(user, 'audit_ip', None),
+        )
     return collab
 
 
@@ -147,8 +173,16 @@ def add_collaborator(*, task: Task, user, target_user=None, email='', role=TaskC
 def remove_collaborator(*, collaborator: TaskCollaborator, user) -> None:
     task = collaborator.task
     collaborator.delete()
-    _audit(user, 'task.collaborator.remove', task,
-           {'target': collaborator.user.username if collaborator.user else collaborator.email})
+    _changes = {'target': collaborator.user.username if collaborator.user else collaborator.email}
+    log_audit(
+        user=user if (user and user.is_authenticated) else None,
+        action='task.collaborator.remove',
+        entity_type=task._meta.label,
+        entity_id=str(task.pk),
+        description=_changes.get('description', ''),
+        changes=_changes,
+        ip_address=getattr(user, 'audit_ip', None),
+    )
 
 
 def default_project(user) -> Project:

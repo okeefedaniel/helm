@@ -68,6 +68,22 @@ class TasksServiceTests(TestCase):
         self.assertEqual(t.status, Task.Status.IN_PROGRESS)
         self.assertEqual(t.position, 42)
 
+    def test_create_task_writes_audit_log_entry(self):
+        # Regression: 2026-03-26 → 2026-04-25 the _audit() helper passed
+        # target_type/target_id/metadata kwargs to a model whose actual
+        # fields are entity_type/entity_id/description/changes. Every
+        # create raised TypeError, swallowed by a bare except — ~4 weeks
+        # of silent audit-trail loss.
+        from core.models import AuditLog
+        before = AuditLog.objects.filter(action='task.create').count()
+        create_task(project=self.project, title='hotfix smoke', user=self.user)
+        self.assertEqual(
+            AuditLog.objects.filter(
+                action='task.create', entity_type='helm_tasks.Task'
+            ).count(),
+            before + 1,
+        )
+
     def test_promote_fleet_item_creates_task_with_link(self):
         t = promote_fleet_item_to_task(
             project=self.project,

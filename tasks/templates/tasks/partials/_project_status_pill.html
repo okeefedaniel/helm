@@ -1,0 +1,15 @@
+{% comment %}
+Status pill for a Project. Color-codes per Project.Status.
+Variables: project (required).
+{% endcomment %}
+{% if project.status == 'active' %}
+  <span class="pill" style="background:#dbeafe; color:#1e40af; font-size:.65rem;">ACTIVE</span>
+{% elif project.status == 'on_hold' %}
+  <span class="pill" style="background:#fef3c7; color:#92400e; font-size:.65rem;">ON HOLD</span>
+{% elif project.status == 'completed' %}
+  <span class="pill" style="background:#d1fae5; color:#065f46; font-size:.65rem;">COMPLETED</span>
+{% elif project.status == 'cancelled' %}
+  <span class="pill" style="background:#fee2e2; color:#991b1b; font-size:.65rem;">CANCELLED</span>
+{% elif project.status == 'archived' %}
+  <span class="pill pill-muted" style="font-size:.65rem;">ARCHIVED</span>
+{% endif %}

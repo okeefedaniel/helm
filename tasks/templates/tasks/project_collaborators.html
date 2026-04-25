@@ -1,0 +1,87 @@
+{% extends "tasks/_base.html" %}
+
+{% block page_title %}Collaborators · {{ project.name }}{% endblock %}
+
+{% block tasks_body %}
+<div class="d-flex align-items-center justify-content-between mb-3">
+    <div class="d-flex align-items-center gap-2">
+        <a href="{{ project.get_absolute_url }}" class="text-decoration-none small text-muted">← {{ project.name }}</a>
+    </div>
+</div>
+
+<h3 class="h5 mb-3">Project collaborators</h3>
+<p class="text-muted small">
+    Project collaborators see the whole project (all tasks, notes, attachments).
+    For task-only invites, use the collaborators panel on a specific task.
+</p>
+
+{# Invite form #}
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+        <h6 class="card-title mb-3">Invite a collaborator</h6>
+        <form method="post" action="{% url 'tasks:project_collaborators' project.slug %}">
+            {% csrf_token %}
+            <div class="row g-2">
+                <div class="col-md-5">
+                    <label class="form-label small text-muted">Internal user</label>
+                    <select name="user_id" class="form-select form-select-sm">
+                        <option value="">— pick a user —</option>
+                        {% for u in invitable_users %}
+                        <option value="{{ u.pk }}">{{ u.email|default:u.username }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label small text-muted">Or external email</label>
+                    <input type="email" name="email" class="form-control form-control-sm" placeholder="external@example.com">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small text-muted">Role</label>
+                    <select name="role" class="form-select form-select-sm">
+                        {% for value, label in roles %}
+                        <option value="{{ value }}"{% if value == 'contributor' %} selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-1 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary btn-sm w-100">Invite</button>
+                </div>
+            </div>
+            {% if form.errors %}
+            <div class="alert alert-danger small mt-2 mb-0">
+                {% for field, errors in form.errors.items %}{% for e in errors %}{{ e }}<br>{% endfor %}{% endfor %}
+            </div>
+            {% endif %}
+        </form>
+    </div>
+</div>
+
+{# Active collaborator list #}
+<div class="card border-0 shadow-sm">
+    <div class="card-header bg-transparent border-0 pt-3 pb-0"><h6 class="mb-0">Active collaborators</h6></div>
+    <div class="list-group list-group-flush">
+        {% for c in collaborators %}
+        <div class="list-group-item d-flex align-items-center justify-content-between">
+            <div>
+                <strong>
+                    {% if c.user %}{{ c.user.email|default:c.user.username }}{% else %}{{ c.email }} <span class="badge bg-warning text-dark">pending</span>{% endif %}
+                </strong>
+                <span class="text-muted small ms-2">· {{ c.get_role_display }}</span>
+                {% if c.invited_by %}
+                <span class="text-muted small ms-2">· invited by {{ c.invited_by.email|default:c.invited_by.username }} {{ c.invited_at|date:"M j" }}</span>
+                {% endif %}
+            </div>
+            <form method="post" action="{% url 'tasks:project_collaborator_remove' project.slug c.pk %}">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-link btn-sm text-danger p-0"
+                        onclick="return confirm('Remove this collaborator?');">
+                    <i class="bi bi-x-circle"></i> Remove
+                </button>
+            </form>
+        </div>
+        {% empty %}
+        <div class="px-3 py-4 text-muted small fst-italic text-center">No active collaborators yet.</div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

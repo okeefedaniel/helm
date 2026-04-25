@@ -1,0 +1,54 @@
+{% extends "tasks/_base.html" %}
+
+{% block page_title %}Notes · {{ project.name }}{% endblock %}
+
+{% block tasks_body %}
+<div class="d-flex align-items-center mb-3">
+    <a href="{{ project.get_absolute_url }}" class="text-decoration-none small text-muted">← {{ project.name }}</a>
+</div>
+
+<h3 class="h5 mb-3">Diligence notes</h3>
+
+{# Add-note form #}
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+        <form method="post" action="{% url 'tasks:project_notes' project.slug %}">
+            {% csrf_token %}
+            <div class="mb-2">
+                {{ form.content }}
+            </div>
+            <div class="d-flex align-items-center justify-content-between">
+                <label class="form-check small">
+                    {{ form.is_internal }}
+                    <span class="form-check-label ms-1">Internal only (staff)</span>
+                </label>
+                <button type="submit" class="btn btn-primary btn-sm">
+                    <i class="bi bi-plus-lg"></i> Add note
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{# Notes thread #}
+<div class="card border-0 shadow-sm">
+    <div class="list-group list-group-flush">
+        {% for note in notes %}
+        <div class="list-group-item">
+            <div class="d-flex align-items-center gap-2 mb-1 small text-muted">
+                <strong class="text-body">
+                    {% if note.author %}{{ note.author.email|default:note.author.username }}{% else %}system{% endif %}
+                </strong>
+                <span>· {{ note.created_at|date:"M j, Y H:i" }}</span>
+                {% if not note.is_internal %}
+                <span class="pill" style="background:#fef3c7; color:#92400e; font-size:.6rem;">EXTERNAL</span>
+                {% endif %}
+            </div>
+            <div class="small">{{ note.content|linebreaksbr }}</div>
+        </div>
+        {% empty %}
+        <div class="px-3 py-4 text-muted small fst-italic text-center">No notes yet.</div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

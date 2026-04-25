@@ -1,7 +1,10 @@
 from django import forms
 from django.contrib.auth import get_user_model
 
-from .models import Project, Task, TaskComment
+from .models import (
+    Project, ProjectAttachment, ProjectCollaborator, ProjectNote,
+    Task, TaskComment,
+)
 
 User = get_user_model()
 
@@ -43,3 +46,47 @@ class PromoteForm(forms.Form):
     item_type = forms.CharField(max_length=48)
     item_id = forms.CharField(max_length=120, required=False)
     url = forms.URLField()
+
+
+class ProjectCollaboratorForm(forms.Form):
+    """Add a project-level collaborator. Either user_id or email required."""
+
+    user_id = forms.CharField(required=False)
+    email = forms.EmailField(required=False)
+    role = forms.ChoiceField(
+        choices=ProjectCollaborator.Role.choices,
+        initial=ProjectCollaborator.Role.CONTRIBUTOR,
+    )
+
+    def clean(self):
+        cleaned = super().clean()
+        if not cleaned.get('user_id') and not cleaned.get('email'):
+            raise forms.ValidationError('Provide either an internal user or an email.')
+        return cleaned
+
+
+class ProjectNoteForm(forms.ModelForm):
+    class Meta:
+        model = ProjectNote
+        fields = ['content', 'is_internal']
+        widgets = {
+            'content': forms.Textarea(attrs={
+                'rows': 3, 'placeholder': 'Add a diligence note…',
+            }),
+        }
+
+
+class ProjectAttachmentForm(forms.ModelForm):
+    class Meta:
+        model = ProjectAttachment
+        fields = ['file', 'description', 'visibility']
+
+
+class ProjectTransitionForm(forms.Form):
+    """Single-field status change. Engine validates the transition."""
+
+    status = forms.ChoiceField(choices=Project.Status.choices)
+    comment = forms.CharField(
+        widget=forms.Textarea(attrs={'rows': 2}),
+        required=False,
+    )

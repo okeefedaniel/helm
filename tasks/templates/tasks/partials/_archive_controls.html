@@ -1,0 +1,21 @@
+{% comment %}
+Archive / unarchive button for project_detail.
+Variables: project.
+{% endcomment %}
+{% if project.is_archived %}
+<form method="post" action="{% url 'tasks:unarchive_project' project.slug %}" class="d-inline">
+  {% csrf_token %}
+  <button type="submit" class="btn btn-outline-secondary btn-sm">
+    <i class="bi bi-arrow-counterclockwise"></i> Unarchive
+  </button>
+</form>
+{% elif project.status == 'completed' or project.status == 'cancelled' %}
+<form method="post" action="{% url 'tasks:archive_project' project.slug %}" class="d-inline">
+  {% csrf_token %}
+  <input type="hidden" name="retention" value="standard">
+  <button type="submit" class="btn btn-outline-secondary btn-sm"
+          onclick="return confirm('Archive this project? It will move to the archived list.');">
+    <i class="bi bi-archive"></i> Archive
+  </button>
+</form>
+{% endif %}

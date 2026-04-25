@@ -1,0 +1,18 @@
+{% comment %}
+Claim banner shown on project_detail when no active assignment exists.
+Variables: project (required), active_assignment (None when unclaimed).
+{% endcomment %}
+{% if not active_assignment and not project.is_archived %}
+<div class="alert alert-info d-flex align-items-center justify-content-between mb-3" role="alert">
+  <div>
+    <strong>This project has no lead.</strong>
+    Claim it to take ownership and unlock transition controls.
+  </div>
+  <form method="post" action="{% url 'tasks:claim_project' project.slug %}">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-primary btn-sm">
+      <i class="bi bi-flag-fill"></i> Claim project
+    </button>
+  </form>
+</div>
+{% endif %}

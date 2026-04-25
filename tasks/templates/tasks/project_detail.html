@@ -4,20 +4,54 @@
 {% block page_title %}{{ project.name }}{% endblock %}
 
 {% block tasks_body %}
-<div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
-    <div class="d-flex align-items-center gap-2">
+<div class="d-flex align-items-center justify-content-between mb-2 flex-wrap gap-2">
+    <div class="d-flex align-items-center gap-2 flex-wrap">
         <span class="pill bg-{{ project.color }}" style="font-size:.6rem;">&nbsp;</span>
         <h3 class="h5 mb-0">{{ project.name }}</h3>
-        {% if project.is_archived %}<span class="pill pill-muted">Archived</span>{% endif %}
+        {% include "tasks/partials/_project_status_pill.html" with project=project %}
+        {% if project.kind != 'standard' %}
+            <span class="pill" style="background:#f3e8ff; color:#6b21a8; font-size:.65rem;">{{ project.get_kind_display|upper }}</span>
+        {% endif %}
     </div>
-    <div class="btn-group btn-group-sm" role="group">
-        <a class="btn btn-outline-secondary{% if view_mode != 'board' %} active{% endif %}" href="?view=list"><i class="bi bi-list-ul"></i> List</a>
-        <a class="btn btn-outline-secondary{% if view_mode == 'board' %} active{% endif %}" href="?view=board"><i class="bi bi-kanban"></i> Board</a>
-        <a class="btn btn-primary" href="{% url 'tasks:task_create' project.slug %}"><i class="bi bi-plus-lg"></i> New Task</a>
+    <div class="d-flex gap-2 align-items-center flex-wrap">
+        <div class="btn-group btn-group-sm" role="group">
+            <a class="btn btn-outline-secondary{% if view_mode != 'board' %} active{% endif %}" href="?view=list"><i class="bi bi-list-ul"></i> List</a>
+            <a class="btn btn-outline-secondary{% if view_mode == 'board' %} active{% endif %}" href="?view=board"><i class="bi bi-kanban"></i> Board</a>
+            <a class="btn btn-primary" href="{% url 'tasks:task_create' project.slug %}"><i class="bi bi-plus-lg"></i> New Task</a>
+        </div>
+        {% include "tasks/partials/_archive_controls.html" with project=project %}
     </div>
 </div>
 
+{# Active assignment indicator #}
+{% if active_assignment %}
+<div class="d-flex align-items-center gap-2 mb-2 small text-muted">
+    <i class="bi bi-flag-fill text-primary"></i>
+    <span>Lead: <strong>{{ active_assignment.assigned_to.email|default:active_assignment.assigned_to.username }}</strong></span>
+    {% if active_assignment.assigned_to_id == request.user.id %}
+        <form method="post" action="{% url 'tasks:release_project' project.slug %}" class="d-inline">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-link btn-sm p-0 text-decoration-none small"
+                    onclick="return confirm('Release your claim on this project?');">release</button>
+        </form>
+    {% endif %}
+</div>
+{% endif %}
+
+{% include "tasks/partials/_claim_banner.html" with project=project active_assignment=active_assignment %}
+
+{% include "tasks/partials/_collaborator_list.html" with project=project collaborators=collaborators %}
+
 {% if project.description %}<p class="text-muted small">{{ project.description }}</p>{% endif %}
+
+{# Transition controls + secondary nav #}
+<div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+    {% include "tasks/partials/_project_transition_controls.html" with project=project available_transitions=available_transitions %}
+    <div class="d-flex gap-3">
+        <a href="{% url 'tasks:project_notes' project.slug %}" class="text-decoration-none small"><i class="bi bi-journal-text"></i> Notes</a>
+        <a href="{% url 'tasks:project_attachments' project.slug %}" class="text-decoration-none small"><i class="bi bi-paperclip"></i> Attachments</a>
+    </div>
+</div>
 
 {% if view_mode == 'board' %}
     {% include "tasks/partials/board.html" %}

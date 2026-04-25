@@ -8,7 +8,7 @@
     <div class="d-flex align-items-center gap-2">
         <span class="pill bg-{{ project.color }}" style="font-size:.6rem;">&nbsp;</span>
         <h3 class="h5 mb-0">{{ project.name }}</h3>
-        {% if project.archived %}<span class="pill pill-muted">Archived</span>{% endif %}
+        {% if project.is_archived %}<span class="pill pill-muted">Archived</span>{% endif %}
     </div>
     <div class="btn-group btn-group-sm" role="group">
         <a class="btn btn-outline-secondary{% if view_mode != 'board' %} active{% endif %}" href="?view=list"><i class="bi bi-list-ul"></i> List</a>

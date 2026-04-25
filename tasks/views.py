@@ -53,7 +53,7 @@ def my_tasks(request):
 def project_list(request):
     qs = (Project.objects
           .annotate(open_count=Count('tasks', filter=~Q(tasks__status=Task.Status.DONE)))
-          .order_by('archived', 'name'))
+          .order_by('archived_at', 'name'))
     return render(request, 'tasks/project_list.html', {'projects': qs})
 
 

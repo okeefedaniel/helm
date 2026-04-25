@@ -38,7 +38,7 @@ class PromoteForm(forms.Form):
     title = forms.CharField(max_length=240)
     description = forms.CharField(widget=forms.Textarea(attrs={'rows': 2}), required=False)
     priority = forms.ChoiceField(choices=Task.Priority.choices, initial=Task.Priority.MEDIUM)
-    project = forms.ModelChoiceField(queryset=Project.objects.filter(archived=False))
+    project = forms.ModelChoiceField(queryset=Project.objects.active())
     product_slug = forms.CharField(max_length=32)
     item_type = forms.CharField(max_length=48)
     item_id = forms.CharField(max_length=120, required=False)

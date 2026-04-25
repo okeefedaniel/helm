@@ -5,9 +5,10 @@ from .models import Project, Task, TaskCollaborator, TaskComment, TaskLink
 
 @admin.register(Project)
 class ProjectAdmin(admin.ModelAdmin):
-    list_display = ('name', 'slug', 'color', 'archived', 'created_at')
-    list_filter = ('archived', 'color')
+    list_display = ('name', 'slug', 'kind', 'status', 'color', 'archived_at', 'created_at')
+    list_filter = ('kind', 'status', 'color')
     search_fields = ('name', 'slug')
+    readonly_fields = ('public_id', 'archived_at', 'previous_terminal_status')
 
 
 @admin.register(Task)

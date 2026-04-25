@@ -49,6 +49,45 @@ def _can_access(user, project) -> bool:
     return Project.objects.filter(pk=project.pk).visible_to(user).exists()
 
 
+def can_summarize(user, project) -> bool:
+    """Whether ``user`` can request the AI summary on ``project``.
+
+    Allowed:
+    - superuser / is_staff / role='system_admin' (suite-wide admins)
+    - the project's active LEAD via ProjectAssignment(IN_PROGRESS)
+    - the project's creator
+    - active ProjectCollaborator with role in (LEAD, CONTRIBUTOR, REVIEWER)
+      — notably NOT OBSERVER
+
+    Returns False for any other case.
+    """
+    if user is None or not getattr(user, 'is_authenticated', False):
+        return False
+    if (
+        getattr(user, 'is_superuser', False)
+        or getattr(user, 'is_staff', False)
+        or getattr(user, 'role', '') == 'system_admin'
+    ):
+        return True
+    if project.created_by_id == user.id:
+        return True
+    # Imports inside the function to avoid app-loading cycles.
+    from tasks.models import ProjectAssignment, ProjectCollaborator
+    if ProjectAssignment.objects.filter(
+        project=project, assigned_to=user,
+        status=ProjectAssignment.Status.IN_PROGRESS,
+    ).exists():
+        return True
+    return ProjectCollaborator.objects.filter(
+        project=project, user=user, is_active=True,
+        role__in=[
+            ProjectCollaborator.Role.LEAD,
+            ProjectCollaborator.Role.CONTRIBUTOR,
+            ProjectCollaborator.Role.REVIEWER,
+        ],
+    ).exists()
+
+
 def _is_htmx(request) -> bool:
     return request.headers.get('HX-Request') == 'true'
 

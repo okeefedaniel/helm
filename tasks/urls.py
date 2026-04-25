@@ -44,6 +44,9 @@ urlpatterns = [
     path('projects/<slug:slug>/foia/toll/', views.foia_toll_view, name='foia_toll'),
     path('projects/<slug:slug>/foia/untoll/', views.foia_untoll_view, name='foia_untoll'),
 
+    # ADD-4 — AI project summary. GET = cached, POST = force refresh.
+    path('projects/<slug:slug>/summarize/', views.summarize_project_view, name='summarize_project'),
+
     # Task-level surface.
     path('t/<int:pk>/', views.task_detail, name='task_detail'),
     path('t/<int:pk>/edit/', views.task_edit, name='task_edit'),

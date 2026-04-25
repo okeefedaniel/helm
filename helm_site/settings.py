@@ -293,6 +293,11 @@ KEEL_NOTIFICATION_MODEL = 'helm_core.Notification'
 KEEL_NOTIFICATION_PREFERENCE_MODEL = 'helm_core.NotificationPreference'
 KEEL_NOTIFICATION_LOG_MODEL = 'helm_core.NotificationLog'
 KEEL_FOIA_EXPORT_MODEL = 'helm_core.FOIAExportItem'
+
+# AI summary feature (ADD-4) — uses keel.core.ai.call_claude.
+ANTHROPIC_API_KEY = os.environ.get('ANTHROPIC_API_KEY', '')
+KEEL_AI_MODEL = os.environ.get('KEEL_AI_MODEL', 'claude-sonnet-4-6')
+KEEL_AI_MAX_TOKENS = 600
 KEEL_API_KEY = os.environ.get('KEEL_API_KEY', '')
 KEEL_API_URL = os.environ.get('KEEL_API_URL', 'https://keel.docklabs.ai')
 HELM_FEED_API_KEY = os.environ.get('HELM_FEED_API_KEY', '')

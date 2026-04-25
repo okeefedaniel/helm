@@ -14,7 +14,7 @@ from keel.core.archive import ArchiveListView
 
 from keel.core.audit import log_audit
 
-from .access import project_access_required, task_access_required, workflow_view
+from .access import can_summarize, project_access_required, task_access_required, workflow_view
 from . import exports
 from .forms import (
     ProjectAttachmentForm, ProjectCollaboratorForm, ProjectForm, ProjectNoteForm,
@@ -137,6 +137,7 @@ def project_detail(request, slug):
         'collaborators': project.collaborators.filter(is_active=True)
                                               .select_related('user'),
         'foia_clock': foia_clock,
+        'can_summarize': can_summarize(request.user, project),
     }
     if view_mode == 'board':
         context['columns'] = _group_by_status(tasks_qs)
@@ -572,6 +573,30 @@ archived_projects = ArchivedProjectsView.as_view()
 # ---------------------------------------------------------------------------
 # Phase 7 — CSV / PDF export
 # ---------------------------------------------------------------------------
+@login_required
+@project_access_required
+def summarize_project_view(request, slug):
+    """ADD-4 — return an AI-generated 3-paragraph status summary.
+
+    GET returns the cached or freshly generated summary as plain text.
+    POST forces a refresh (skips the cache).
+    Restricted via can_summarize() — OBSERVERs cannot invoke.
+    """
+    if not can_summarize(request.user, request.project):
+        return HttpResponse(status=403)
+    from tasks.ai import summarize_project
+    summary = summarize_project(
+        request.project, force_refresh=request.method == 'POST',
+    )
+    log_audit(
+        user=request.user, action='export',
+        entity_type='helm_tasks.Project', entity_id=str(request.project.pk),
+        description=f'AI summary generated for {request.project.slug}',
+        ip_address=getattr(request.user, 'audit_ip', None),
+    )
+    return HttpResponse(summary, content_type='text/plain; charset=utf-8')
+
+
 @login_required
 @project_access_required
 @workflow_view

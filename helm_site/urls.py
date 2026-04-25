@@ -65,6 +65,7 @@ urlpatterns = [
     path('accounts/', include('allauth.urls')),
     # Keel shared
     path('notifications/', include('keel.notifications.urls')),
+    path('scheduling/', include('keel.scheduling.urls')),
     path('search/', search_view, name='search'),
     path('keel/requests/', include('keel.requests.urls')),
     # Helm apps

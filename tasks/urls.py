@@ -31,6 +31,10 @@ urlpatterns = [
     path('projects/<slug:slug>/notes/', views.project_notes_view, name='project_notes'),
     path('projects/<slug:slug>/attachments/', views.project_attachments_view, name='project_attachments'),
 
+    # Phase 7 export endpoints — CSV (task list) + PDF (status report).
+    path('projects/<slug:slug>/export.csv', views.export_project_csv, name='export_project_csv'),
+    path('projects/<slug:slug>/export.pdf', views.export_project_pdf, name='export_project_pdf'),
+
     # Task-level surface.
     path('t/<int:pk>/', views.task_detail, name='task_detail'),
     path('t/<int:pk>/edit/', views.task_edit, name='task_edit'),

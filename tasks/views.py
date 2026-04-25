@@ -12,7 +12,10 @@ from django.views.generic import ListView
 
 from keel.core.archive import ArchiveListView
 
+from keel.core.audit import log_audit
+
 from .access import project_access_required, task_access_required, workflow_view
+from . import exports
 from .forms import (
     ProjectAttachmentForm, ProjectCollaboratorForm, ProjectForm, ProjectNoteForm,
     ProjectTransitionForm, PromoteForm, TaskCommentForm, TaskForm,
@@ -555,3 +558,34 @@ class ArchivedProjectsView(LoginRequiredMixin, ArchiveListView):
 
 
 archived_projects = ArchivedProjectsView.as_view()
+
+
+# ---------------------------------------------------------------------------
+# Phase 7 — CSV / PDF export
+# ---------------------------------------------------------------------------
+@login_required
+@project_access_required
+def export_project_csv(request, slug):
+    """Stream a project's task list as CSV."""
+    response = exports.project_to_csv(request.project)
+    log_audit(
+        user=request.user, action='export',
+        entity_type='helm_tasks.Project', entity_id=str(request.project.pk),
+        description=f'CSV export of {request.project.slug} tasks',
+        ip_address=getattr(request.user, 'audit_ip', None),
+    )
+    return response
+
+
+@login_required
+@project_access_required
+def export_project_pdf(request, slug):
+    """Render a project status report as PDF (ReportLab)."""
+    response = exports.project_to_pdf(request.project)
+    log_audit(
+        user=request.user, action='export',
+        entity_type='helm_tasks.Project', entity_id=str(request.project.pk),
+        description=f'PDF status report for {request.project.slug}',
+        ip_address=getattr(request.user, 'audit_ip', None),
+    )
+    return response

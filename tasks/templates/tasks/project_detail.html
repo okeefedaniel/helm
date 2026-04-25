@@ -50,6 +50,8 @@
     <div class="d-flex gap-3">
         <a href="{% url 'tasks:project_notes' project.slug %}" class="text-decoration-none small"><i class="bi bi-journal-text"></i> Notes</a>
         <a href="{% url 'tasks:project_attachments' project.slug %}" class="text-decoration-none small"><i class="bi bi-paperclip"></i> Attachments</a>
+        <a href="{% url 'tasks:export_project_csv' project.slug %}" class="text-decoration-none small"><i class="bi bi-filetype-csv"></i> CSV</a>
+        <a href="{% url 'tasks:export_project_pdf' project.slug %}" class="text-decoration-none small"><i class="bi bi-filetype-pdf"></i> PDF</a>
     </div>
 </div>
 

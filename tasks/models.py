@@ -67,12 +67,7 @@ COLOR_CHOICES = [
 # Project
 # ---------------------------------------------------------------------------
 class ProjectQuerySet(ArchiveQuerySetMixin, models.QuerySet):
-    """Custom queryset for Project.
-
-    ``visible_to(user)`` is added in Phase 4 (per-project ACL); for now the
-    archive helpers from ``ArchiveQuerySetMixin`` (.active() / .archived())
-    are wired so callers and templates have stable APIs.
-    """
+    """Custom queryset for Project, with archive helpers and per-user ACL."""
 
     def with_open_count(self):
         return self.annotate(
@@ -82,6 +77,39 @@ class ProjectQuerySet(ArchiveQuerySetMixin, models.QuerySet):
                 distinct=True,
             ),
         )
+
+    def visible_to(self, user):
+        """Return only the projects this user may view.
+
+        Visibility rules (any one grants access):
+        - Anonymous → no projects.
+        - Superuser / is_staff / role='system_admin' → every project.
+        - Active ``ProjectAssignment(assigned_to=user)`` → that project.
+        - Active ``ProjectCollaborator(user=user, is_active=True)`` → that project.
+        - ``Project.created_by=user`` → that project.
+
+        Distinct() guards against the JOIN duplication when a user is both
+        creator and collaborator.
+        """
+        if user is None or not getattr(user, 'is_authenticated', False):
+            return self.none()
+        if (
+            getattr(user, 'is_superuser', False)
+            or getattr(user, 'is_staff', False)
+            or getattr(user, 'role', '') == 'system_admin'
+        ):
+            return self
+        return self.filter(
+            models.Q(created_by=user)
+            | models.Q(
+                assignments__assigned_to=user,
+                assignments__status='in_progress',
+            )
+            | models.Q(
+                collaborators__user=user,
+                collaborators__is_active=True,
+            )
+        ).distinct()
 
 
 class Project(WorkflowModelMixin, ArchivableMixin, models.Model):

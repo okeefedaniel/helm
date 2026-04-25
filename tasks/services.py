@@ -380,6 +380,9 @@ def add_project_collaborator(
     defaults = {'role': role, 'invited_by': _u(user)}
     if target_user is not None:
         defaults['accepted_at'] = timezone.now()
+        # Populate email from target_user so the (project, email) unique
+        # constraint works correctly across both internal and external invites.
+        defaults['email'] = target_user.email or ''
         collab, created = ProjectCollaborator.objects.get_or_create(
             project=project, user=target_user, defaults=defaults,
         )

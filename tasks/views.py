@@ -8,6 +8,7 @@ from django.template.loader import render_to_string
 from django.urls import reverse
 from django.views.decorators.http import require_POST
 
+from .access import project_access_required, task_access_required, workflow_view
 from .forms import ProjectForm, PromoteForm, TaskCommentForm, TaskForm
 from .models import Project, Task, TaskCollaborator, TaskComment
 from .services import (
@@ -52,6 +53,7 @@ def my_tasks(request):
 @login_required
 def project_list(request):
     qs = (Project.objects
+          .visible_to(request.user)
           .annotate(open_count=Count('tasks', filter=~Q(tasks__status=Task.Status.DONE)))
           .order_by('archived_at', 'name'))
     return render(request, 'tasks/project_list.html', {'projects': qs})
@@ -73,8 +75,9 @@ def project_create(request):
 
 
 @login_required
+@project_access_required
 def project_detail(request, slug):
-    project = get_object_or_404(Project, slug=slug)
+    project = request.project
     view_mode = request.GET.get('view', 'list')
     tasks_qs = (project.tasks
                 .select_related('assignee', 'created_by')
@@ -93,8 +96,9 @@ def project_detail(request, slug):
 
 
 @login_required
+@project_access_required
 def task_create(request, slug):
-    project = get_object_or_404(Project, slug=slug)
+    project = request.project
     if request.method == 'POST':
         form = TaskForm(request.POST)
         if form.is_valid():
@@ -115,8 +119,9 @@ def task_create(request, slug):
 
 
 @login_required
+@task_access_required
 def task_detail(request, pk):
-    task = get_object_or_404(Task.objects.select_related('project', 'assignee', 'created_by'), pk=pk)
+    task = request.task
     comment_form = TaskCommentForm()
     if request.method == 'POST':
         comment_form = TaskCommentForm(request.POST)
@@ -145,8 +150,9 @@ def task_detail(request, pk):
 
 
 @login_required
+@task_access_required
 def task_edit(request, pk):
-    task = get_object_or_404(Task, pk=pk)
+    task = request.task
     if request.method == 'POST':
         form = TaskForm(request.POST, instance=task)
         if form.is_valid():
@@ -158,9 +164,10 @@ def task_edit(request, pk):
 
 
 @login_required
+@task_access_required
 @require_POST
 def task_delete(request, pk):
-    task = get_object_or_404(Task, pk=pk)
+    task = request.task
     if not (request.user.is_staff or request.user == task.created_by):
         return HttpResponse(status=403)
     project_url = task.project.get_absolute_url()
@@ -170,10 +177,12 @@ def task_delete(request, pk):
 
 
 @login_required
+@task_access_required
+@workflow_view
 @require_POST
 def task_status(request, pk):
     """HTMX endpoint: inline status change from list/board/detail views."""
-    task = get_object_or_404(Task, pk=pk)
+    task = request.task
     new_status = request.POST.get('status')
     if new_status not in dict(Task.Status.choices):
         return HttpResponseBadRequest('invalid status')
@@ -182,10 +191,12 @@ def task_status(request, pk):
 
 
 @login_required
+@task_access_required
+@workflow_view
 @require_POST
 def task_reorder(request, pk):
     """HTMX endpoint called by Sortable.js drag-drop on the board."""
-    task = get_object_or_404(Task, pk=pk)
+    task = request.task
     new_status = request.POST.get('status')
     try:
         new_position = int(request.POST.get('position', 0))
@@ -242,9 +253,10 @@ def promote(request):
 
 
 @login_required
+@task_access_required
 @require_POST
 def collaborator_add(request, pk):
-    task = get_object_or_404(Task, pk=pk)
+    task = request.task
     role = request.POST.get('role', TaskCollaborator.Role.CONTRIBUTOR)
     user_id = request.POST.get('user_id')
     email = request.POST.get('email', '').strip()
@@ -261,6 +273,7 @@ def collaborator_add(request, pk):
 
 
 @login_required
+@task_access_required
 @require_POST
 def collaborator_remove(request, pk, collab_id):
     collab = get_object_or_404(TaskCollaborator, pk=collab_id, task_id=pk)

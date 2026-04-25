@@ -51,8 +51,8 @@
   {% if helm_tasks_enabled %}
   <a class="sb-item{% if request.resolver_match.namespace == 'tasks' %} active{% endif %}" href="{% url 'tasks:my_tasks' %}">
     <span class="sb-toggle" style="visibility:hidden">&rsaquo;</span>
-    <span class="sb-icon"><i class="bi bi-check2-square"></i></span>
-    <span class="sb-item-label">Tasks</span>
+    <span class="sb-icon"><i class="bi bi-kanban"></i></span>
+    <span class="sb-item-label">Project Management</span>
   </a>
   {% endif %}
 </div>

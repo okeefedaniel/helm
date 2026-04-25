@@ -4,7 +4,7 @@
 {% block content %}
 <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
     <div class="d-flex align-items-center gap-2">
-        <h2 class="h5 mb-0"><i class="bi bi-check2-square me-2"></i>Tasks</h2>
+        <h2 class="h5 mb-0"><i class="bi bi-kanban me-2"></i>Project Management</h2>
         <nav class="ms-3">
             <a class="small text-decoration-none me-3{% if request.resolver_match.url_name == 'my_tasks' %} fw-semibold{% else %} text-muted{% endif %}" href="{% url 'tasks:my_tasks' %}">My Tasks</a>
             <a class="small text-decoration-none me-3{% if request.resolver_match.url_name == 'project_list' %} fw-semibold{% else %} text-muted{% endif %}" href="{% url 'tasks:project_list' %}">Projects</a>

@@ -88,6 +88,12 @@ def main():
         log(f"ERROR: Gunicorn exited with code {gunicorn_proc.returncode}")
         sys.exit(1)
 
+    # Pre-migrate audit — show what's about to run, catch obvious migration-state
+    # drift (orphan app labels, missing dependencies) before the irreversible step.
+    # Added 2026-04-25 after a `core` → `helm_core` rename mismatch took prod down.
+    log("=== Pre-migrate audit (showmigrations --plan) ===")
+    run(f"{manage} showmigrations --plan | tail -40")
+
     # Run migrations
     # MUST be fatal — see keel/CLAUDE.md "Startup failures MUST be fatal."
     log("=== Running migrations ===")

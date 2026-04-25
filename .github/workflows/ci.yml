@@ -58,10 +58,20 @@ jobs:
       - name: Run migrations
         run: python manage.py migrate --noinput
 
+      - name: Check for unrecorded model changes
+        # Catches edits to models.py that didn't get a corresponding makemigrations.
+        # This guards against the failure mode that took helm prod down 2026-04-24:
+        # an app rename without its data migration on prod DBs.
+        env:
+          HELM_TASKS_ENABLED: 'true'
+        run: python manage.py makemigrations --check --dry-run
+
       - name: Django deployment check
         run: python manage.py check --deploy 2>&1 || true
 
       - name: Run tests
+        env:
+          HELM_TASKS_ENABLED: 'true'
         run: |
           coverage run manage.py test --verbosity=2 || echo "No tests or tests failed (non-gating for initial CI)"
           coverage report --fail-under=0 || true

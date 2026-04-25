@@ -722,3 +722,65 @@ def export_project_pdf(request, slug):
         ip_address=getattr(request.user, 'audit_ip', None),
     )
     return response
+
+
+# ---------------------------------------------------------------------------
+# ADD-5 — Project Online (PWA) import wizard
+# ---------------------------------------------------------------------------
+@login_required
+def import_project_online_view(request):
+    """Two-step CSV/Excel import wizard for Microsoft Project Online (PWA).
+
+    GET            → upload form.
+    POST (file)    → trial parse, render preview report.
+    POST (commit=1)→ create projects via services.create_project().
+
+    Staff-only — bulk create across the workspace is privileged.
+    """
+    if not request.user.is_staff:
+        return HttpResponse(status=403)
+
+    from tasks.integrations import project_online
+
+    if request.method == 'GET':
+        return render(request, 'tasks/import_project_online.html', {})
+
+    upload = request.FILES.get('file')
+    if not upload:
+        messages.error(request, 'Please choose a CSV or Excel file to import.')
+        return redirect('tasks:import_project_online')
+
+    content = upload.read()
+    name = (upload.name or '').lower()
+    try:
+        if name.endswith('.xlsx') or name.endswith('.xlsm'):
+            report = project_online.parse_xlsx(content)
+        else:
+            report = project_online.parse_csv(content)
+    except Exception as e:
+        messages.error(request, f'Could not parse file: {e}')
+        return redirect('tasks:import_project_online')
+
+    if request.POST.get('commit') == '1':
+        result = project_online.commit_import(report, user=request.user)
+        log_audit(
+            user=request.user, action='create',
+            entity_type='helm_tasks.Project', entity_id='',
+            description=(
+                f'Project Online import: {result["created_count"]} created, '
+                f'{result["skipped_count"]} skipped, {result["failed_count"]} failed.'
+            ),
+            changes={'integration': 'project_online', **result},
+            ip_address=getattr(request.user, 'audit_ip', None),
+        )
+        messages.success(
+            request,
+            f'Imported {result["created_count"]} project(s) from Project Online.',
+        )
+        return render(request, 'tasks/import_project_online.html', {
+            'result': result, 'report': report,
+        })
+
+    return render(request, 'tasks/import_project_online.html', {
+        'report': report, 'filename': upload.name,
+    })

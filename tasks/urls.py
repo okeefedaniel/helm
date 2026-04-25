@@ -19,6 +19,13 @@ urlpatterns = [
     path('projects/new/', views.project_create, name='project_create'),
     path('projects/archived/', views.archived_projects, name='archived_projects'),
 
+    # ADD-5 — Project Online (PWA) import wizard. Staff-only.
+    path(
+        'import/project-online/',
+        views.import_project_online_view,
+        name='import_project_online',
+    ),
+
     # Project detail + lifecycle endpoints.
     path('projects/<slug:slug>/', views.project_detail, name='project_detail'),
     path('projects/<slug:slug>/tasks/new/', views.task_create, name='task_create'),

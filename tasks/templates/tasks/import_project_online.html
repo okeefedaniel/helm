@@ -1,0 +1,149 @@
+{% extends "tasks/_base.html" %}
+
+{% block page_title %}Import from Project Online{% endblock %}
+
+{% block tasks_body %}
+<div class="container py-4" style="max-width: 880px;">
+  <h1 class="h3 mb-1">Import from Microsoft Project Online</h1>
+  <p class="text-muted">
+    Upload a CSV or Excel export from a PWA Projects view. Each row becomes a Helm project.
+    Project Online retires September 30, 2026 — this wizard is the migration on-ramp.
+  </p>
+
+  {% if not report and not result %}
+    <div class="card mt-4">
+      <div class="card-body">
+        <form method="post" enctype="multipart/form-data">
+          {% csrf_token %}
+          <div class="mb-3">
+            <label for="id_file" class="form-label">Project Online export (.csv or .xlsx)</label>
+            <input type="file" name="file" id="id_file" class="form-control"
+                   accept=".csv,.xlsx,.xlsm" required>
+            <div class="form-text">
+              Recognized columns: Project Name, Description, Start, Finish, Notes, Owner.
+              Unrecognized columns are ignored.
+            </div>
+          </div>
+          <button type="submit" class="btn btn-primary">
+            <i class="bi bi-upload"></i> Trial parse
+          </button>
+        </form>
+      </div>
+    </div>
+  {% endif %}
+
+  {% if report and not result %}
+    <div class="card mt-4">
+      <div class="card-body">
+        <h2 class="h5">Preview — {{ filename }}</h2>
+        <p class="mb-2">
+          <span class="badge bg-success">{{ report.valid_count }} ready to import</span>
+          {% if report.error_count %}
+            <span class="badge bg-warning text-dark">{{ report.error_count }} with errors</span>
+          {% endif %}
+        </p>
+
+        {% if report.column_mapping %}
+        <h3 class="h6 mt-3">Column mapping</h3>
+        <table class="table table-sm">
+          <thead><tr><th>Source column</th><th>Helm field</th></tr></thead>
+          <tbody>
+            {% for src, dest in report.column_mapping.items %}
+              <tr><td><code>{{ src }}</code></td><td>{{ dest }}</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% endif %}
+
+        {% if report.unmapped_columns %}
+          <p class="small text-muted">
+            Ignored columns: {% for c in report.unmapped_columns %}<code>{{ c }}</code>{% if not forloop.last %}, {% endif %}{% endfor %}
+          </p>
+        {% endif %}
+
+        <h3 class="h6 mt-3">Rows</h3>
+        <table class="table table-sm table-striped">
+          <thead><tr><th>#</th><th>Name</th><th>Start</th><th>Finish</th><th>Status</th></tr></thead>
+          <tbody>
+            {% for row in report.rows %}
+              <tr>
+                <td>{{ forloop.counter }}</td>
+                <td>{{ row.name|default:"—" }}</td>
+                <td>{{ row.started_at|default:"—" }}</td>
+                <td>{{ row.target_end_at|default:"—" }}</td>
+                <td>
+                  {% if row.is_valid %}
+                    <span class="badge bg-success">ready</span>
+                  {% else %}
+                    <span class="badge bg-danger">{{ row.errors|join:"; " }}</span>
+                  {% endif %}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+
+        {% if report.valid_count %}
+          <form method="post" enctype="multipart/form-data" class="mt-3">
+            {% csrf_token %}
+            <input type="hidden" name="commit" value="1">
+            <input type="file" name="file" class="d-none" required
+                   id="id_file_commit">
+            <p class="small text-muted">
+              Re-attach the same file and click Commit to create the {{ report.valid_count }} valid project(s).
+            </p>
+            <label for="id_file_commit" class="btn btn-outline-secondary btn-sm">
+              <i class="bi bi-paperclip"></i> Re-attach file
+            </label>
+            <button type="submit" class="btn btn-success">
+              <i class="bi bi-check2-circle"></i> Commit import
+            </button>
+            <a href="{% url 'tasks:import_project_online' %}" class="btn btn-link">Cancel</a>
+          </form>
+        {% else %}
+          <a href="{% url 'tasks:import_project_online' %}" class="btn btn-secondary">
+            Start over
+          </a>
+        {% endif %}
+      </div>
+    </div>
+  {% endif %}
+
+  {% if result %}
+    <div class="card mt-4">
+      <div class="card-body">
+        <h2 class="h5">Import complete</h2>
+        <p>
+          <span class="badge bg-success">{{ result.created_count }} created</span>
+          <span class="badge bg-secondary">{{ result.skipped_count }} skipped</span>
+          {% if result.failed_count %}
+            <span class="badge bg-danger">{{ result.failed_count }} failed</span>
+          {% endif %}
+        </p>
+
+        {% if result.created %}
+          <h3 class="h6">Created</h3>
+          <ul>
+            {% for p in result.created %}
+              <li><a href="{% url 'tasks:project_detail' p.slug %}">{{ p.name }}</a></li>
+            {% endfor %}
+          </ul>
+        {% endif %}
+
+        {% if result.failed %}
+          <h3 class="h6 text-danger">Failed</h3>
+          <ul>
+            {% for f in result.failed %}
+              <li><strong>{{ f.name }}</strong> — {{ f.error }}</li>
+            {% endfor %}
+          </ul>
+        {% endif %}
+
+        <a href="{% url 'tasks:project_list' %}" class="btn btn-primary mt-2">
+          View all projects
+        </a>
+      </div>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

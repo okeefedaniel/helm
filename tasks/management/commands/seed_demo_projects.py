@@ -75,12 +75,16 @@ PROJECTS = [
             'requester_organization': 'Hartford Courant',
             'requester_name': 'Jane Doe',
         },
+        # ADD-2 — populate the statutory clock so the demo countdown badge
+        # is meaningful. Received 7 calendar days ago; deadline computed
+        # by recompute_deadline().
+        'foia_received_offset_days': -7,
         'tasks': [
             ('Search responsive records', Task.Priority.HIGH, Task.Status.IN_PROGRESS, 4),
             ('Review for exemptions (CGS §1-210(b))', Task.Priority.HIGH, Task.Status.TODO, 8),
             ('Redact and prepare release packet', Task.Priority.MEDIUM, Task.Status.TODO, 14),
         ],
-        'notes': ['Counsel reviewing scope. Statutory deadline tracking pending Phase 9 Admiralty bridge.'],
+        'notes': ['Counsel reviewing scope. Statutory deadline auto-computed from received_at.'],
     },
     {
         'slug': 'capital-improvement-2025',
@@ -177,10 +181,18 @@ class Command(BaseCommand):
             project.slug = spec['slug']
             project.save(update_fields=['slug'])
 
-        # FOIA metadata.
+        # FOIA metadata + statutory clock.
         if spec.get('foia_metadata'):
             project.foia_metadata = spec['foia_metadata']
             project.save(update_fields=['foia_metadata'])
+        if spec.get('foia_received_offset_days') is not None:
+            from tasks.foia import recompute_deadline
+            project.foia_received_at = today + timedelta(
+                days=spec['foia_received_offset_days'],
+            )
+            project.foia_jurisdiction = Project.FOIAJurisdiction.FEDERAL
+            project.save(update_fields=['foia_received_at', 'foia_jurisdiction'])
+            recompute_deadline(project)
 
         # Claim. Use manager-initiated path so the lead gets a notification
         # in their in-app feed when the seed runs (only matters for demo

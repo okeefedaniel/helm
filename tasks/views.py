@@ -108,6 +108,14 @@ def project_create(request):
 def project_detail(request, slug):
     project = request.project
     view_mode = request.GET.get('view', 'list')
+    # ADD-2 FOIA clock — compute days remaining + urgency tier when kind=FOIA.
+    foia_clock = None
+    if project.kind == Project.Kind.FOIA and project.foia_statutory_deadline_at:
+        from tasks.foia import days_remaining, urgency_tier
+        foia_clock = {
+            'days': days_remaining(project),
+            'tier': urgency_tier(project),
+        }
     tasks_qs = (project.tasks
                 .select_related('assignee', 'created_by')
                 .order_by('position', '-created_at'))
@@ -128,6 +136,7 @@ def project_detail(request, slug):
         'available_transitions': available_transitions,
         'collaborators': project.collaborators.filter(is_active=True)
                                               .select_related('user'),
+        'foia_clock': foia_clock,
     }
     if view_mode == 'board':
         context['columns'] = _group_by_status(tasks_qs)
@@ -563,6 +572,45 @@ archived_projects = ArchivedProjectsView.as_view()
 # ---------------------------------------------------------------------------
 # Phase 7 — CSV / PDF export
 # ---------------------------------------------------------------------------
+@login_required
+@project_access_required
+@workflow_view
+@require_POST
+def foia_toll_view(request, slug):
+    """Apply or update FOIA tolling on the project."""
+    from datetime import date
+    from tasks.services import toll_foia
+    try:
+        tolled_at = date.fromisoformat(request.POST.get('tolled_at', ''))
+        tolled_until = date.fromisoformat(request.POST.get('tolled_until', ''))
+    except ValueError:
+        return HttpResponseBadRequest('Invalid tolled_at or tolled_until')
+    if tolled_until <= tolled_at:
+        return HttpResponseBadRequest('tolled_until must be after tolled_at')
+    toll_foia(
+        project=request.project, user=request.user,
+        tolled_at=tolled_at, tolled_until=tolled_until,
+        comment=request.POST.get('reason', ''),
+    )
+    messages.success(request, 'FOIA clock tolled.')
+    return redirect(request.project.get_absolute_url())
+
+
+@login_required
+@project_access_required
+@workflow_view
+@require_POST
+def foia_untoll_view(request, slug):
+    """Clear FOIA tolling and restore the original deadline."""
+    from tasks.services import untoll_foia
+    untoll_foia(
+        project=request.project, user=request.user,
+        comment=request.POST.get('reason', ''),
+    )
+    messages.success(request, 'FOIA tolling cleared; deadline restored.')
+    return redirect(request.project.get_absolute_url())
+
+
 @login_required
 @project_access_required
 def export_project_csv(request, slug):

@@ -239,7 +239,47 @@ def promote_fleet_item_to_task(
                     meta[f'foia_{key}' if not key.startswith('foia_') else key] = fleet_item[key]
         project.kind = Project.Kind.FOIA
         project.foia_metadata = meta
-        project.save(update_fields=['kind', 'foia_metadata'])
+        # ADD-2: promote the time-sensitive metadata to first-class fields so
+        # the statutory clock can be queried, indexed, and rendered as a
+        # countdown badge.
+        from datetime import date as _date
+        from tasks.foia import recompute_deadline
+        update_fields = ['kind', 'foia_metadata']
+        received_str = (fleet_item or {}).get('received_at')
+        if received_str:
+            try:
+                project.foia_received_at = _date.fromisoformat(received_str)
+                update_fields.append('foia_received_at')
+            except (TypeError, ValueError):
+                pass
+        if not project.foia_jurisdiction:
+            project.foia_jurisdiction = Project.FOIAJurisdiction.FEDERAL
+            update_fields.append('foia_jurisdiction')
+        project.save(update_fields=update_fields)
+        # Compute the deadline if we have a received_at.
+        if project.foia_received_at:
+            recompute_deadline(project)
+            # Auto-create the three default FOIA stage tasks. Only on first
+            # promotion (idempotency: skip if any of the canonical titles
+            # already exist on the project).
+            existing_titles = set(
+                project.tasks.values_list('title', flat=True)
+            )
+            default_tasks = [
+                ('Acknowledge receipt within 5 business days', Task.Priority.HIGH),
+                ('Search responsive records', Task.Priority.HIGH),
+                ('Release / withhold by statutory deadline', Task.Priority.URGENT),
+            ]
+            for title, prio in default_tasks:
+                if title not in existing_titles:
+                    create_task(
+                        project=project, title=title,
+                        user=user, priority=prio,
+                        description=(
+                            f'Auto-created from Admiralty FOIA promotion. '
+                            f'Statutory deadline: {project.foia_statutory_deadline_at}.'
+                        ),
+                    )
     log_audit(
         user=_u(user),
         action='task.promote',
@@ -698,6 +738,61 @@ def archive_project(
         event='helm_project_archived',
         actor=_u(user),
         context={'project': project, 'title': project.name},
+    )
+    return project
+
+
+@transaction.atomic
+def toll_foia(
+    *, project: Project, user, tolled_at, tolled_until, comment: str = '',
+) -> Project:
+    """Pause the FOIA statutory clock between two dates. Recomputes the
+    deadline by extending it by the tolled span (in business days).
+    """
+    from tasks.foia import recompute_deadline
+    if project.kind != Project.Kind.FOIA:
+        raise ValueError('Cannot toll a non-FOIA project.')
+    project.foia_tolled_at = tolled_at
+    project.foia_tolled_until = tolled_until
+    project.save(update_fields=['foia_tolled_at', 'foia_tolled_until'])
+    recompute_deadline(project)
+    log_audit(
+        user=_u(user),
+        action='foia.toll',
+        entity_type=project._meta.label,
+        entity_id=str(project.pk),
+        description=(
+            f'FOIA tolling: {tolled_at.isoformat()} → {tolled_until.isoformat()}. '
+            f'New deadline: {project.foia_statutory_deadline_at}.'
+        ),
+        changes={
+            'tolled_at': tolled_at.isoformat(),
+            'tolled_until': tolled_until.isoformat(),
+            'reason': comment,
+        },
+        ip_address=_ip(user),
+    )
+    return project
+
+
+@transaction.atomic
+def untoll_foia(*, project: Project, user, comment: str = '') -> Project:
+    """Clear the tolling and recompute the deadline back to its base value."""
+    from tasks.foia import recompute_deadline
+    if project.kind != Project.Kind.FOIA:
+        raise ValueError('Cannot untoll a non-FOIA project.')
+    project.foia_tolled_at = None
+    project.foia_tolled_until = None
+    project.save(update_fields=['foia_tolled_at', 'foia_tolled_until'])
+    recompute_deadline(project)
+    log_audit(
+        user=_u(user),
+        action='foia.untoll',
+        entity_type=project._meta.label,
+        entity_id=str(project.pk),
+        description=f'FOIA tolling cleared. Deadline restored to {project.foia_statutory_deadline_at}.',
+        changes={'reason': comment},
+        ip_address=_ip(user),
     )
     return project
 

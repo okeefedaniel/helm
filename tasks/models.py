@@ -154,6 +154,39 @@ class Project(WorkflowModelMixin, ArchivableMixin, models.Model):
     # FOIA request is promoted into a Helm project (Phase 9).
     foia_metadata = models.JSONField(default=dict, blank=True)
 
+    # ADD-2 — FOIA statutory clock. Promoted from foia_metadata to
+    # first-class fields so the clock can be queried, indexed, and
+    # rendered as a countdown badge. Only meaningful when kind=FOIA.
+    class FOIAJurisdiction(models.TextChoices):
+        FEDERAL = 'federal', 'Federal (5 USC 552 — 20 business days)'
+        # State-specific jurisdictions can be added as follow-on:
+        # CALIFORNIA = 'california', 'California PRA (10 calendar days)'
+        # TEXAS = 'texas', 'Texas Public Information Act (10 business days)'
+        # CONNECTICUT = 'connecticut', 'Connecticut FOIA (4 business days)'
+
+    foia_jurisdiction = models.CharField(
+        max_length=24, choices=FOIAJurisdiction.choices,
+        default=FOIAJurisdiction.FEDERAL, blank=True,
+        help_text='Jurisdiction whose statutory deadline applies. Federal default.',
+    )
+    foia_received_at = models.DateField(
+        null=True, blank=True,
+        help_text='Date the FOIA request was received. Triggers the clock.',
+    )
+    foia_statutory_deadline_at = models.DateField(
+        null=True, blank=True, db_index=True,
+        help_text='Computed statutory deadline. Recomputed when received_at, '
+                  'jurisdiction, or tolling changes.',
+    )
+    foia_tolled_at = models.DateField(
+        null=True, blank=True,
+        help_text='Date the clock was paused (tolled).',
+    )
+    foia_tolled_until = models.DateField(
+        null=True, blank=True,
+        help_text='Date the tolling ends and the clock resumes.',
+    )
+
     started_at = models.DateField(null=True, blank=True)
     target_end_at = models.DateField(null=True, blank=True)
     completed_at = models.DateTimeField(null=True, blank=True)

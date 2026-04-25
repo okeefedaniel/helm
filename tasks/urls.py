@@ -40,6 +40,10 @@ urlpatterns = [
     path('projects/<slug:slug>/export.csv', views.export_project_csv, name='export_project_csv'),
     path('projects/<slug:slug>/export.pdf', views.export_project_pdf, name='export_project_pdf'),
 
+    # ADD-2 — FOIA tolling controls (only meaningful for kind=FOIA projects).
+    path('projects/<slug:slug>/foia/toll/', views.foia_toll_view, name='foia_toll'),
+    path('projects/<slug:slug>/foia/untoll/', views.foia_untoll_view, name='foia_untoll'),
+
     # Task-level surface.
     path('t/<int:pk>/', views.task_detail, name='task_detail'),
     path('t/<int:pk>/edit/', views.task_edit, name='task_edit'),

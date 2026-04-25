@@ -1,0 +1,39 @@
+{% comment %}
+FOIA statutory countdown badge. Shows the project's days_remaining with
+color tier (overdue → red, urgent ≤2 BD → red, warning ≤5 → orange,
+caution ≤10 → amber, ok → green, tolled → gray strikethrough).
+
+Variables:
+  project — Project instance with foia_statutory_deadline_at + tolling fields
+  days    — pre-computed business days remaining (negative = overdue)
+  tier    — string from tasks.foia.urgency_tier()
+{% endcomment %}
+{% if project.foia_statutory_deadline_at %}
+<div class="d-inline-flex align-items-center gap-2 px-3 py-2 rounded"
+     style="
+       {% if tier == 'overdue' %}background:#fee2e2; color:#991b1b; border:1px solid #dc2626;
+       {% elif tier == 'urgent' %}background:#fee2e2; color:#991b1b; border:1px solid #dc2626;
+       {% elif tier == 'warning' %}background:#fed7aa; color:#9a3412; border:1px solid #ea580c;
+       {% elif tier == 'caution' %}background:#fef3c7; color:#92400e; border:1px solid #f59e0b;
+       {% elif tier == 'tolled' %}background:#f3f4f6; color:#6b7280; border:1px solid #9ca3af;
+       {% else %}background:#d1fae5; color:#065f46; border:1px solid #10b981;
+       {% endif %}">
+  <i class="bi bi-clock-history"></i>
+  <div>
+    {% if tier == 'overdue' %}
+      <strong>OVERDUE</strong>
+      <span class="small">by {{ days|floatformat:0|cut:"-" }} business {% if days == -1 or days == 1 %}day{% else %}days{% endif %}</span>
+    {% elif tier == 'tolled' %}
+      <strong>TOLLED</strong>
+      <span class="small">until {{ project.foia_tolled_until|date:"M j, Y" }}</span>
+    {% else %}
+      <strong>{{ days }} business {% if days == 1 %}day{% else %}days{% endif %}</strong>
+      <span class="small">until {{ project.foia_statutory_deadline_at|date:"M j, Y" }}</span>
+    {% endif %}
+    <div class="small" style="opacity:.85;">
+      {% if project.foia_received_at %}received {{ project.foia_received_at|date:"M j, Y" }} · {% endif %}
+      {{ project.get_foia_jurisdiction_display }}
+    </div>
+  </div>
+</div>
+{% endif %}

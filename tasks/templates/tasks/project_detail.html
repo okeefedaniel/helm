@@ -76,6 +76,13 @@
 
 {% include "tasks/partials/_collaborator_list.html" with project=project collaborators=collaborators %}
 
+{# ADD-1 fund source pills — only renders for kind=CIP projects with sources. #}
+{% if project.kind == 'cip' %}
+<div class="mb-3">
+    {% include "tasks/partials/_fund_source_pills.html" with project=project %}
+</div>
+{% endif %}
+
 {% if project.description %}<p class="text-muted small">{{ project.description }}</p>{% endif %}
 
 {# AI summary panel — populated client-side from /summarize/ endpoint. #}

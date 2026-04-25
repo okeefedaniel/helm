@@ -1,0 +1,47 @@
+{% comment %}
+ADD-1 — Fund source pills for CIP projects.
+
+Variables:
+  project — Project with fund_sources JSON list of
+            {source: 'arpa', amount_cents: 240000000, label?}
+
+Each source rendered as a color-coded pill with its formatted amount.
+Color is the federal-program color convention (ARPA blue, IIJA green,
+IRA purple, BEAD orange, SLCGP red, CDBG teal, bonds gold, match gray).
+{% endcomment %}
+{% if project.fund_sources %}
+{% load humanize %}
+<div class="d-flex flex-wrap gap-2 align-items-center">
+  {% for fs in project.fund_sources %}
+  <span class="pill" style="
+       font-size:.65rem;
+       {% if fs.source == 'arpa' %}background:#dbeafe; color:#1e40af;
+       {% elif fs.source == 'iija' %}background:#d1fae5; color:#065f46;
+       {% elif fs.source == 'ira' %}background:#f3e8ff; color:#6b21a8;
+       {% elif fs.source == 'bead' %}background:#fed7aa; color:#9a3412;
+       {% elif fs.source == 'slcgp' %}background:#fee2e2; color:#991b1b;
+       {% elif fs.source == 'cdbg' %}background:#cffafe; color:#155e75;
+       {% elif fs.source == 'go_bond' or fs.source == 'revenue_bond' %}background:#fef3c7; color:#92400e;
+       {% else %}background:#f3f4f6; color:#374151;
+       {% endif %}
+  ">
+    <strong>{{ fs.source|upper }}</strong>
+    {% if fs.amount_cents %}
+      ${{ fs.amount_cents|floatformat:0 }} cents
+    {% endif %}
+    {% if fs.label %}<small style="opacity:.85;">· {{ fs.label }}</small>{% endif %}
+  </span>
+  {% endfor %}
+</div>
+{% endif %}
+
+{# Federal compliance flags. #}
+{% if project.requires_davis_bacon or project.requires_baba or project.requires_nepa or project.requires_environmental_review %}
+<div class="d-flex flex-wrap gap-2 align-items-center mt-2">
+  <span class="text-muted small me-1">Compliance:</span>
+  {% if project.requires_davis_bacon %}<span class="badge bg-warning text-dark">Davis-Bacon</span>{% endif %}
+  {% if project.requires_baba %}<span class="badge bg-warning text-dark">Build America Buy America</span>{% endif %}
+  {% if project.requires_nepa %}<span class="badge bg-warning text-dark">NEPA review</span>{% endif %}
+  {% if project.requires_environmental_review %}<span class="badge bg-info text-dark">Environmental review</span>{% endif %}
+</div>
+{% endif %}

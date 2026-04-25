@@ -31,14 +31,16 @@ class SeedDemoProjectsTests(TestCase):
             username='analyst', email='analyst@docklabs.ai',
         )
 
-    def test_seed_creates_four_projects(self):
+    def test_seed_creates_six_projects(self):
         call_command('seed_demo_projects')
-        self.assertEqual(Project.objects.count(), 4)
+        self.assertEqual(Project.objects.count(), 6)
         slugs = set(Project.objects.values_list('slug', flat=True))
         self.assertEqual(slugs, {
             'q3-grant-portfolio',
             'arpa-spring-rfp-foia',
             'capital-improvement-2025',
+            'arpa-broadband-rollout',
+            'iija-bridge-replacement',
             'archived-pilot-2024',
         })
 
@@ -121,7 +123,7 @@ class SeedDemoProjectsSafetyTests(TestCase):
             is_superuser=True, is_staff=True,
         )
         call_command('seed_demo_projects', '--force')
-        self.assertEqual(Project.objects.count(), 4)
+        self.assertEqual(Project.objects.count(), 6)
 
 
 @override_settings(HELM_TASKS_ENABLED=False)

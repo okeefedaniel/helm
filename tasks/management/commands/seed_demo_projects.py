@@ -100,6 +100,48 @@ PROJECTS = [
         'notes': ['Closeout signed off by council on April 18.'],
     },
     {
+        'slug': 'arpa-broadband-rollout',
+        'name': 'ARPA Broadband Rollout — Phase 1',
+        'kind': Project.Kind.CIP,
+        'color': 'blue',
+        'description': 'Last-mile broadband expansion in three rural counties. ARPA-funded with state match.',
+        'target_status': Project.Status.ACTIVE,
+        'fund_sources': [
+            {'source': 'arpa', 'amount_cents': 240000000, 'label': 'ARPA Capital Projects Fund'},
+            {'source': 'state_match', 'amount_cents': 60000000, 'label': '20% state match'},
+        ],
+        'requires_davis_bacon': True,
+        'requires_baba': True,
+        'requires_environmental_review': True,
+        'tasks': [
+            ('Verify subgrantee Davis-Bacon compliance', Task.Priority.HIGH, Task.Status.IN_PROGRESS, 7),
+            ('File NEPA categorical exclusion request', Task.Priority.HIGH, Task.Status.TODO, 14),
+            ('Q3 ARPA drawdown reconciliation', Task.Priority.MEDIUM, Task.Status.TODO, 30),
+        ],
+        'notes': ['Federal eligibility flags reviewed by counsel 2026-04-15.'],
+    },
+    {
+        'slug': 'iija-bridge-replacement',
+        'name': 'IIJA Bridge Replacement — Route 14',
+        'kind': Project.Kind.CIP,
+        'color': 'green',
+        'description': 'Replace deficient Route 14 bridge over Pequot River. IIJA-funded with revenue bond match.',
+        'target_status': Project.Status.ACTIVE,
+        'fund_sources': [
+            {'source': 'iija', 'amount_cents': 1600000000, 'label': 'IIJA Bridge Investment Program'},
+            {'source': 'revenue_bond', 'amount_cents': 400000000, 'label': '20% local share'},
+        ],
+        'requires_davis_bacon': True,
+        'requires_baba': True,
+        'requires_nepa': True,
+        'tasks': [
+            ('Complete NEPA EA — public comment period', Task.Priority.URGENT, Task.Status.IN_PROGRESS, 21),
+            ('Begin BABA waiver review for steel girders', Task.Priority.HIGH, Task.Status.TODO, 14),
+            ('Schedule community engagement session', Task.Priority.MEDIUM, Task.Status.TODO, 28),
+        ],
+        'notes': ['BABA waiver may be required for domestic steel sourcing — counsel reviewing.'],
+    },
+    {
         'slug': 'archived-pilot-2024',
         'name': 'Pilot Program 2024 (Archived)',
         'kind': Project.Kind.STANDARD,
@@ -193,6 +235,21 @@ class Command(BaseCommand):
             project.foia_jurisdiction = Project.FOIAJurisdiction.FEDERAL
             project.save(update_fields=['foia_received_at', 'foia_jurisdiction'])
             recompute_deadline(project)
+
+        # ADD-1 — CIP fund sources + federal compliance flags.
+        cip_fields = []
+        if spec.get('fund_sources'):
+            project.fund_sources = spec['fund_sources']
+            cip_fields.append('fund_sources')
+        for flag in (
+            'requires_davis_bacon', 'requires_baba',
+            'requires_nepa', 'requires_environmental_review',
+        ):
+            if spec.get(flag):
+                setattr(project, flag, True)
+                cip_fields.append(flag)
+        if cip_fields:
+            project.save(update_fields=cip_fields)
 
         # Claim. Use manager-initiated path so the lead gets a notification
         # in their in-app feed when the seed runs (only matters for demo

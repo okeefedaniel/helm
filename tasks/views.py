@@ -79,12 +79,32 @@ def project_list(request):
           .active()  # hide archived; "View archive" link in template
           .annotate(open_count=Count('tasks', filter=~Q(tasks__status=Task.Status.DONE)))
           .order_by('name'))
-    paginator = Paginator(qs, 25)
+    # Kind filter (?kind=cip / ?kind=foia / ?kind=standard).
+    kind = request.GET.get('kind')
+    if kind:
+        qs = qs.filter(kind=kind)
+    # ADD-1 — fund source filter. ?fund_source=arpa keeps only projects
+    # whose fund_sources JSON list includes an entry with that source.
+    # Done in Python rather than SQL because SQLite doesn't support
+    # JSONField __contains (Postgres does, but we want one path).
+    fund_source = request.GET.get('fund_source')
+    if fund_source:
+        # Materialize, filter in Python, paginate the result.
+        all_visible = list(qs)
+        filtered = [
+            p for p in all_visible
+            if any(fs.get('source') == fund_source for fs in (p.fund_sources or []))
+        ]
+        paginator = Paginator(filtered, 25)
+    else:
+        paginator = Paginator(qs, 25)
     page_obj = paginator.get_page(request.GET.get('page'))
     return render(request, 'tasks/project_list.html', {
         'projects': page_obj.object_list,
         'page_obj': page_obj,
         'is_paginated': page_obj.has_other_pages(),
+        'active_fund_source': fund_source or '',
+        'active_kind_filter': kind or '',
     })
 
 

@@ -115,10 +115,12 @@ class ProjectQuerySet(ArchiveQuerySetMixin, models.QuerySet):
 class Project(WorkflowModelMixin, ArchivableMixin, models.Model):
     """Government-first PM container with full lifecycle compliance."""
 
-    # T1.1 foundation — full FOIA workflow lands in a follow-on plan.
+    # Project kind enum. ADD-2 added FOIA (statutory clock); ADD-1 adds CIP
+    # (capital improvement plan with federal fund-source modeling).
     class Kind(models.TextChoices):
         STANDARD = 'standard', 'Standard'
         FOIA = 'foia', 'FOIA Request'
+        CIP = 'cip', 'Capital Improvement Plan'
 
     class Status(models.TextChoices):
         ACTIVE = 'active', 'Active'
@@ -185,6 +187,46 @@ class Project(WorkflowModelMixin, ArchivableMixin, models.Model):
     foia_tolled_until = models.DateField(
         null=True, blank=True,
         help_text='Date the tolling ends and the clock resumes.',
+    )
+
+    # ADD-1 — CIP project type. Federal fund sources tracked as a structured
+    # JSON list: [{"source": "arpa", "amount_cents": 240000000, "label": "..."}].
+    # Boolean federal-eligibility flags drive an audit-ready compliance posture.
+    # Only meaningful when kind=CIP.
+    class FundSource(models.TextChoices):
+        ARPA = 'arpa', 'ARPA — American Rescue Plan Act'
+        IIJA = 'iija', 'IIJA — Infrastructure Investment and Jobs Act'
+        IRA = 'ira', 'IRA — Inflation Reduction Act'
+        BEAD = 'bead', 'BEAD — Broadband Equity, Access, and Deployment'
+        SLCGP = 'slcgp', 'SLCGP — State and Local Cybersecurity Grant'
+        CDBG = 'cdbg', 'CDBG — Community Development Block Grant'
+        GO_BOND = 'go_bond', 'General Obligation Bond'
+        REVENUE_BOND = 'revenue_bond', 'Revenue Bond'
+        STATE_MATCH = 'state_match', 'State Match'
+        LOCAL_MATCH = 'local_match', 'Local Match'
+        GENERAL_FUND = 'general_fund', 'General Fund'
+
+    fund_sources = models.JSONField(
+        default=list, blank=True,
+        help_text='List of {source, amount_cents, label} dicts. Source is from FundSource.',
+    )
+
+    # Federal compliance flags — only relevant for federal-fund-tied CIP projects.
+    requires_davis_bacon = models.BooleanField(
+        default=False,
+        help_text='Davis-Bacon Act prevailing wage requirements apply (federal construction).',
+    )
+    requires_baba = models.BooleanField(
+        default=False,
+        help_text='Build America, Buy America domestic-procurement requirements apply.',
+    )
+    requires_nepa = models.BooleanField(
+        default=False,
+        help_text='NEPA environmental review required (federal funds + ground disturbance).',
+    )
+    requires_environmental_review = models.BooleanField(
+        default=False,
+        help_text='State or local environmental review required.',
     )
 
     started_at = models.DateField(null=True, blank=True)

@@ -190,8 +190,19 @@ def promote_fleet_item_to_task(
     url: str,
     description: str = '',
     priority: str = Task.Priority.MEDIUM,
+    fleet_item: dict | None = None,
 ) -> Task:
-    """Create a task from a fleet action-queue item or alert."""
+    """Create a task from a fleet action-queue item or alert.
+
+    When the source is an Admiralty FOIA request and the target project is
+    a STANDARD-kind project, the project is upgraded to FOIA kind and its
+    ``foia_metadata`` is populated from the fleet_item payload. This is
+    the Phase 9 Admiralty bridge: a Helm exec promoting a FOIA action item
+    converts the project into a FOIA-tracked one without manual data entry.
+
+    Optional ``fleet_item`` carries the full action-item dict from the
+    Admiralty helm-feed (received_at, statutory_deadline, agency, etc.).
+    """
     task = create_task(
         project=project,
         title=title,
@@ -207,6 +218,28 @@ def promote_fleet_item_to_task(
         url=url,
         label=f'{product_slug.title()} — {item_type}',
     )
+    # Phase 9 — Admiralty FOIA bridge: lift FOIA metadata onto the project
+    # when the source is an Admiralty FOIA request and the project is still
+    # a STANDARD kind. Idempotent: re-promoting the same FOIA item updates
+    # existing foia_metadata fields with the latest values from the feed.
+    if (
+        product_slug == 'admiralty'
+        and item_type == 'foia_request'
+        and project.kind == Project.Kind.STANDARD
+    ):
+        meta = dict(project.foia_metadata or {})
+        meta['foia_request_id'] = str(item_id)
+        meta['admiralty_url'] = url
+        if fleet_item:
+            for key in (
+                'received_at', 'statutory_deadline', 'agency',
+                'requester_organization', 'requester_name',
+            ):
+                if fleet_item.get(key) is not None:
+                    meta[f'foia_{key}' if not key.startswith('foia_') else key] = fleet_item[key]
+        project.kind = Project.Kind.FOIA
+        project.foia_metadata = meta
+        project.save(update_fields=['kind', 'foia_metadata'])
     log_audit(
         user=_u(user),
         action='task.promote',

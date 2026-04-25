@@ -65,6 +65,7 @@ INSTALLED_APPS = [
     'keel.compliance',
     'keel.reporting',
     'keel.requests',
+    'keel.foia',
     # Third party
     'rest_framework',
     'crispy_forms',
@@ -290,6 +291,7 @@ KEEL_AUDIT_LOG_MODEL = 'helm_core.AuditLog'
 KEEL_NOTIFICATION_MODEL = 'helm_core.Notification'
 KEEL_NOTIFICATION_PREFERENCE_MODEL = 'helm_core.NotificationPreference'
 KEEL_NOTIFICATION_LOG_MODEL = 'helm_core.NotificationLog'
+KEEL_FOIA_EXPORT_MODEL = 'helm_core.FOIAExportItem'
 KEEL_API_KEY = os.environ.get('KEEL_API_KEY', '')
 KEEL_API_URL = os.environ.get('KEEL_API_URL', 'https://keel.docklabs.ai')
 HELM_FEED_API_KEY = os.environ.get('HELM_FEED_API_KEY', '')

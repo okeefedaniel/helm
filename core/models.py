@@ -2,6 +2,7 @@
 from django.db import models
 
 from keel.core.models import AbstractAuditLog, AbstractNotification
+from keel.foia.models import AbstractFOIAExportItem
 from keel.notifications.models import AbstractNotificationPreference, AbstractNotificationLog
 
 
@@ -36,3 +37,11 @@ class NotificationLog(AbstractNotificationLog):
 
     class Meta(AbstractNotificationLog.Meta):
         db_table = 'helm_notification_log'
+
+
+class FOIAExportItem(AbstractFOIAExportItem):
+    """Helm's concrete FOIA export queue. Receives Project / ProjectNote /
+    ProjectAttachment records pushed via keel.foia.export.submit_to_foia."""
+
+    class Meta(AbstractFOIAExportItem.Meta):
+        db_table = 'helm_foia_export_item'

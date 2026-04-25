@@ -1,0 +1,104 @@
+{% comment %}
+ADD-3 — Public transparency template.
+
+Standalone HTML — no sidebar, no auth chrome, no internal IDs. Per-field
+allowlist: only renders what the view passes in context. Adding a new
+field to Project does NOT auto-leak it through this surface.
+{% endcomment %}<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ project.name }} — Public project status</title>
+  <meta name="description" content="Public status report for {{ project.name }}.">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+  <style>
+    body { background: #f7f7f5; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+    .public-page { max-width: 720px; margin: 2rem auto; padding: 0 1rem; }
+    .public-card { background: #fff; border-radius: 8px; padding: 2rem; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+    .progress-bar-bg { background: #e5e7eb; border-radius: 99px; height: .5rem; overflow: hidden; }
+    .progress-bar-fill { background: #10b981; height: 100%; transition: width .3s; }
+  </style>
+</head>
+<body>
+  <main class="public-page">
+    <div class="public-card">
+      <p class="text-uppercase small text-muted mb-1" style="letter-spacing:.06rem;">
+        <i class="bi bi-eye"></i> Public project status
+      </p>
+      <h1 class="h3 mb-2">{{ project.name }}</h1>
+
+      <div class="d-flex flex-wrap gap-2 align-items-center mb-3">
+        <span class="badge bg-secondary text-uppercase">{{ project.get_kind_display }}</span>
+        <span class="badge {% if project.status == 'active' %}bg-primary{% elif project.status == 'on_hold' %}bg-warning text-dark{% elif project.status == 'completed' %}bg-success{% else %}bg-secondary{% endif %}">
+          {{ project.get_status_display }}
+        </span>
+      </div>
+
+      {% if project.description %}
+      <p class="text-muted">{{ project.description }}</p>
+      {% endif %}
+
+      {# Progress #}
+      <div class="my-4">
+        <div class="d-flex justify-content-between mb-1">
+          <span class="small text-muted">Progress</span>
+          <strong>{{ pct_complete }}%</strong>
+        </div>
+        <div class="progress-bar-bg"><div class="progress-bar-fill" style="width:{{ pct_complete }}%"></div></div>
+        <p class="small text-muted mt-1 mb-0">{{ done_tasks }} of {{ total_tasks }} tasks complete</p>
+      </div>
+
+      {# Dates #}
+      <table class="table table-sm">
+        <tbody>
+          {% if project.started_at %}
+          <tr><th class="text-muted small" style="width:35%;">Started</th><td>{{ project.started_at|date:"F j, Y" }}</td></tr>
+          {% endif %}
+          {% if project.target_end_at %}
+          <tr><th class="text-muted small">Target completion</th><td>{{ project.target_end_at|date:"F j, Y" }}</td></tr>
+          {% endif %}
+          {% if project.completed_at %}
+          <tr><th class="text-muted small">Completed</th><td>{{ project.completed_at|date:"F j, Y" }}</td></tr>
+          {% endif %}
+        </tbody>
+      </table>
+
+      {# Fund sources — public for CIP only. #}
+      {% if project.kind == 'cip' and project.fund_sources %}
+      <h2 class="h6 text-uppercase text-muted mt-4">Funding</h2>
+      <ul class="list-unstyled mb-0">
+        {% for fs in project.fund_sources %}
+        <li class="mb-1">
+          <strong>{{ fs.source|upper }}</strong>
+          {% if fs.amount_cents %}— ${{ fs.amount_cents|floatformat:0 }} cents{% endif %}
+          {% if fs.label %}<small class="text-muted">· {{ fs.label }}</small>{% endif %}
+        </li>
+        {% endfor %}
+      </ul>
+      {% endif %}
+
+      {# FOIA clock — public-safe: just the countdown. #}
+      {% if foia_clock %}
+      <h2 class="h6 text-uppercase text-muted mt-4">Records request status</h2>
+      <p class="mb-0">
+        {% if foia_clock.tier == 'overdue' %}
+          <strong class="text-danger">Past statutory deadline.</strong>
+        {% elif foia_clock.tier == 'tolled' %}
+          <strong class="text-muted">Clock paused (tolled).</strong>
+        {% else %}
+          <strong>{{ foia_clock.days }} business days remaining</strong> until statutory response deadline ({{ foia_clock.deadline|date:"F j, Y" }}).
+        {% endif %}
+      </p>
+      {% endif %}
+
+      <hr class="my-4">
+      <p class="small text-muted mb-0">
+        Published transparency view. Internal notes, attachments, and
+        personnel information are not shown.
+      </p>
+    </div>
+  </main>
+</body>
+</html>

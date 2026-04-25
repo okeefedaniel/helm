@@ -113,6 +113,7 @@ PROJECTS = [
         'requires_davis_bacon': True,
         'requires_baba': True,
         'requires_environmental_review': True,
+        'public_visibility': 'public',  # ADD-3 — demo public surface.
         'tasks': [
             ('Verify subgrantee Davis-Bacon compliance', Task.Priority.HIGH, Task.Status.IN_PROGRESS, 7),
             ('File NEPA categorical exclusion request', Task.Priority.HIGH, Task.Status.TODO, 14),
@@ -248,6 +249,10 @@ class Command(BaseCommand):
             if spec.get(flag):
                 setattr(project, flag, True)
                 cip_fields.append(flag)
+        # ADD-3 — public transparency.
+        if spec.get('public_visibility'):
+            project.public_visibility = spec['public_visibility']
+            cip_fields.append('public_visibility')
         if cip_fields:
             project.save(update_fields=cip_fields)
 

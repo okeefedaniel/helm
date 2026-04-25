@@ -1,6 +1,6 @@
 from django.urls import path
 
-from . import calendar_views, views
+from . import calendar_views, public_views, views
 
 app_name = 'tasks'
 
@@ -46,6 +46,13 @@ urlpatterns = [
 
     # ADD-4 — AI project summary. GET = cached, POST = force refresh.
     path('projects/<slug:slug>/summarize/', views.summarize_project_view, name='summarize_project'),
+
+    # ADD-3 — public transparency toggle. LEAD-only.
+    path(
+        'projects/<slug:slug>/visibility/',
+        public_views.toggle_public_visibility,
+        name='toggle_public_visibility',
+    ),
 
     # Task-level surface.
     path('t/<int:pk>/', views.task_detail, name='task_detail'),

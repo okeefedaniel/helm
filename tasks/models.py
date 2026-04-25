@@ -229,6 +229,22 @@ class Project(WorkflowModelMixin, ArchivableMixin, models.Model):
         help_text='State or local environmental review required.',
     )
 
+    # ADD-3 — Public transparency. When PUBLIC, the project is visible at
+    # /p/<public_id>/ to anyone (no auth) — name, status, target dates,
+    # task completion %, fund sources (CIP only). NO notes, NO attachments,
+    # NO collaborators, NO PII. Default PRIVATE. LEAD-only toggle.
+    class PublicVisibility(models.TextChoices):
+        PRIVATE = 'private', 'Private'
+        PUBLIC = 'public', 'Public'
+
+    public_visibility = models.CharField(
+        max_length=10,
+        choices=PublicVisibility.choices,
+        default=PublicVisibility.PRIVATE,
+        db_index=True,
+        help_text='Public projects render at /p/<public_id>/ to unauthenticated visitors.',
+    )
+
     started_at = models.DateField(null=True, blank=True)
     target_end_at = models.DateField(null=True, blank=True)
     completed_at = models.DateTimeField(null=True, blank=True)

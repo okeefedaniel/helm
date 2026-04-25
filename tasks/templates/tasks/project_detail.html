@@ -85,6 +85,37 @@
 
 {% if project.description %}<p class="text-muted small">{{ project.description }}</p>{% endif %}
 
+{# ADD-3 — public visibility toggle (LEAD-only). #}
+{% if project.public_visibility == 'public' %}
+<div class="alert alert-info py-2 mb-3 d-flex align-items-center gap-2 small">
+    <i class="bi bi-eye-fill"></i>
+    This project is <strong>public</strong> at
+    <a href="{% url 'public_project_detail' project.public_id %}" target="_blank" class="text-decoration-none">
+        /p/{{ project.public_id }}/
+    </a>
+    {% if active_assignment.assigned_to_id == request.user.id or request.user.is_staff %}
+    <form method="post" action="{% url 'tasks:toggle_public_visibility' project.slug %}" class="ms-auto">
+        {% csrf_token %}
+        <input type="hidden" name="visibility" value="private">
+        <button type="submit" class="btn btn-sm btn-outline-secondary">Make private</button>
+    </form>
+    {% endif %}
+</div>
+{% elif active_assignment.assigned_to_id == request.user.id or request.user.is_staff %}
+<details class="small mb-3">
+    <summary class="text-muted text-decoration-underline" style="cursor:pointer;">Make project public…</summary>
+    <form method="post" action="{% url 'tasks:toggle_public_visibility' project.slug %}" class="d-flex gap-2 align-items-center mt-2">
+        {% csrf_token %}
+        <input type="hidden" name="visibility" value="public">
+        <button type="submit" class="btn btn-sm btn-outline-primary"
+                onclick="return confirm('Make this project publicly visible? Anyone with the link will see name, status, dates, and (if CIP) fund sources. Notes, attachments, and audit data stay internal.');">
+            <i class="bi bi-eye"></i> Publish
+        </button>
+        <span class="text-muted">Renders at /p/&lt;public_id&gt;/ — no login required.</span>
+    </form>
+</details>
+{% endif %}
+
 {# AI summary panel — populated client-side from /summarize/ endpoint. #}
 {% if can_summarize %}
 <div id="helm-ai-summary-panel" class="card border-0 shadow-sm mb-3" style="display:none;">

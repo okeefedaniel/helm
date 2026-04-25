@@ -78,7 +78,14 @@ urlpatterns = [
 ]
 
 if settings.HELM_TASKS_ENABLED:
+    from tasks.public_views import public_project_detail
     urlpatterns.append(path('tasks/', include('tasks.urls')))
+    # ADD-3 — public transparency. Mounted at root /p/<uuid>/ so the
+    # public URL is short and shareable.
+    urlpatterns.append(path(
+        'p/<uuid:public_id>/', public_project_detail,
+        name='public_project_detail',
+    ))
 
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

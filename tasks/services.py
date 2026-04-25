@@ -1,16 +1,59 @@
 """Business logic for Helm Tasks.
 
 Keep views thin; do all mutations + audit logging here.
+
+Two collaborator scopes coexist (per plan §6.2 / Phase 2):
+- ``TaskCollaborator``: invited only to a specific task. Use
+  ``add_task_collaborator`` / ``remove_task_collaborator``.
+- ``ProjectCollaborator``: invited to the whole project (sees all tasks
+  in it). Use ``add_project_collaborator`` / ``remove_project_collaborator``.
+
+Project lifecycle services follow the DockLabs Project Lifecycle Standard:
+``create_project`` → ``claim_project`` (Harbor reassign-on-conflict
+semantics) → ``add_project_collaborator`` → ``add_project_note`` /
+``add_project_attachment`` → ``transition_project`` → ``archive_project``
+(writes both ``archived_at`` AND an ``ArchivedProjectRecord`` retention
+row in one transaction.atomic) → ``unarchive_project`` (restores
+``previous_terminal_status``).
 """
 from __future__ import annotations
 
+from datetime import timedelta
+
 from django.db import transaction
+from django.utils import timezone
 
 from keel.core.audit import log_audit
 
-from .models import Project, Task, TaskCollaborator, TaskLink
+from .models import (
+    ArchivedProjectRecord,
+    Project,
+    ProjectAssignment,
+    ProjectAttachment,
+    ProjectCollaborator,
+    ProjectNote,
+    Task,
+    TaskCollaborator,
+    TaskLink,
+)
 
 
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
+def _u(user):
+    """Return user only if authenticated, else None — for audit/FK fields."""
+    return user if (user and user.is_authenticated) else None
+
+
+def _ip(user):
+    return getattr(user, 'audit_ip', None)
+
+
+# ---------------------------------------------------------------------------
+# Task services (existing — kept; collaborator helpers renamed to be
+# task-scoped explicitly so project-scoped equivalents read clearly)
+# ---------------------------------------------------------------------------
 @transaction.atomic
 def create_task(*, project: Project, title: str, user, **fields) -> Task:
     position = (project.tasks.aggregate_max_position()
@@ -19,19 +62,18 @@ def create_task(*, project: Project, title: str, user, **fields) -> Task:
     task = Task.objects.create(
         project=project,
         title=title,
-        created_by=user if user and user.is_authenticated else None,
+        created_by=_u(user),
         position=position,
         **fields,
     )
-    _changes = {'title': title, 'project': project.slug}
     log_audit(
-        user=user if (user and user.is_authenticated) else None,
+        user=_u(user),
         action='task.create',
         entity_type=task._meta.label,
         entity_id=str(task.pk),
-        description=_changes.get('description', ''),
-        changes=_changes,
-        ip_address=getattr(user, 'audit_ip', None),
+        description=f'Created task "{title}" in {project.slug}',
+        changes={'title': title, 'project': project.slug},
+        ip_address=_ip(user),
     )
     return task
 
@@ -44,7 +86,6 @@ def update_task(task: Task, *, user, **fields) -> Task:
             changed[key] = value
             setattr(task, key, value)
     if 'status' in changed and changed['status'] == Task.Status.DONE and not task.completed_at:
-        from django.utils import timezone
         task.completed_at = timezone.now()
         changed['completed_at'] = task.completed_at
     elif 'status' in changed and changed['status'] != Task.Status.DONE:
@@ -52,15 +93,14 @@ def update_task(task: Task, *, user, **fields) -> Task:
         changed['completed_at'] = None
     if changed:
         task.save()
-        _changes = {'changed': list(changed.keys())}
         log_audit(
-            user=user if (user and user.is_authenticated) else None,
+            user=_u(user),
             action='task.update',
             entity_type=task._meta.label,
             entity_id=str(task.pk),
-            description=_changes.get('description', ''),
-            changes=_changes,
-            ip_address=getattr(user, 'audit_ip', None),
+            description=f'Updated task fields: {", ".join(changed.keys())}',
+            changes={'changed': list(changed.keys())},
+            ip_address=_ip(user),
         )
     return task
 
@@ -70,20 +110,45 @@ def reorder_task(task: Task, *, user, new_status: str, new_position: int) -> Tas
     task.status = new_status
     task.position = new_position
     if new_status == Task.Status.DONE and not task.completed_at:
-        from django.utils import timezone
         task.completed_at = timezone.now()
     elif new_status != Task.Status.DONE:
         task.completed_at = None
     task.save(update_fields=['status', 'position', 'completed_at', 'updated_at'])
-    _changes = {'status': new_status, 'position': new_position}
     log_audit(
-        user=user if (user and user.is_authenticated) else None,
+        user=_u(user),
         action='task.reorder',
         entity_type=task._meta.label,
         entity_id=str(task.pk),
-        description=_changes.get('description', ''),
-        changes=_changes,
-        ip_address=getattr(user, 'audit_ip', None),
+        description=f'Reordered task to {new_status}#{new_position}',
+        changes={'status': new_status, 'position': new_position},
+        ip_address=_ip(user),
+    )
+    return task
+
+
+@transaction.atomic
+def transition_task(*, task: Task, user, target_status: str, comment: str = '') -> Task:
+    """Engine-validated status transition. Wraps ``Task.transition()``.
+
+    Side-effects: stamps ``completed_at`` when target is DONE; clears it
+    when target moves out of DONE. Records ``TaskStatusHistory`` via the
+    workflow engine's history hook.
+    """
+    task.transition(target_status, user=user, comment=comment)
+    if target_status == Task.Status.DONE and not task.completed_at:
+        task.completed_at = timezone.now()
+        task.save(update_fields=['completed_at'])
+    elif target_status != Task.Status.DONE and task.completed_at:
+        task.completed_at = None
+        task.save(update_fields=['completed_at'])
+    log_audit(
+        user=_u(user),
+        action='task.transition',
+        entity_type=task._meta.label,
+        entity_id=str(task.pk),
+        description=f'Transitioned task to {target_status}',
+        changes={'target_status': target_status, 'comment': comment},
+        ip_address=_ip(user),
     )
     return task
 
@@ -117,37 +182,30 @@ def promote_fleet_item_to_task(
         url=url,
         label=f'{product_slug.title()} — {item_type}',
     )
-    _changes = {'product': product_slug, 'item_type': item_type}
     log_audit(
-        user=user if (user and user.is_authenticated) else None,
+        user=_u(user),
         action='task.promote',
         entity_type=task._meta.label,
         entity_id=str(task.pk),
-        description=_changes.get('description', ''),
-        changes=_changes,
-        ip_address=getattr(user, 'audit_ip', None),
+        description=f'Promoted {product_slug}/{item_type}/{item_id} to task',
+        changes={'product': product_slug, 'item_type': item_type},
+        ip_address=_ip(user),
     )
     return task
 
 
 @transaction.atomic
-def add_collaborator(*, task: Task, user, target_user=None, email='', role=TaskCollaborator.Role.CONTRIBUTOR) -> TaskCollaborator:
-    """Add a collaborator to a task.
-
-    For internal users (`target_user` set), the collaborator is immediately
-    active — they already have product access. For external `email`-only
-    invites, the row is created in pending state; v2 will email them via the
-    existing keel.accounts.Invitation flow.
-    """
+def add_task_collaborator(
+    *, task: Task, user, target_user=None, email: str = '',
+    role: str = TaskCollaborator.Role.CONTRIBUTOR,
+) -> TaskCollaborator:
+    """Add a TASK-scoped collaborator. Internal users auto-accept; external
+    email-only invites stay pending until accepted (v2)."""
     if target_user is None and not email:
         raise ValueError('Must provide target_user or email.')
-    defaults = {
-        'role': role,
-        'invited_by': user if user and user.is_authenticated else None,
-    }
+    defaults = {'role': role, 'invited_by': _u(user)}
     if target_user is not None:
-        from django.utils import timezone as _tz
-        defaults['accepted_at'] = _tz.now()  # internal users auto-accept
+        defaults['accepted_at'] = timezone.now()
         collab, created = TaskCollaborator.objects.get_or_create(
             task=task, user=target_user, defaults=defaults,
         )
@@ -156,39 +214,392 @@ def add_collaborator(*, task: Task, user, target_user=None, email='', role=TaskC
             task=task, email=email, defaults=defaults,
         )
     if created:
-        _changes = {'target': target_user.username if target_user else email, 'role': role}
         log_audit(
-            user=user if (user and user.is_authenticated) else None,
+            user=_u(user),
             action='task.collaborator.add',
             entity_type=task._meta.label,
             entity_id=str(task.pk),
-            description=_changes.get('description', ''),
-            changes=_changes,
-            ip_address=getattr(user, 'audit_ip', None),
+            description=f'Added collaborator {target_user or email} as {role}',
+            changes={'target': target_user.username if target_user else email, 'role': role},
+            ip_address=_ip(user),
         )
     return collab
 
 
+# Backward-compat alias (existing views still import the old name).
+add_collaborator = add_task_collaborator
+
+
 @transaction.atomic
-def remove_collaborator(*, collaborator: TaskCollaborator, user) -> None:
+def remove_task_collaborator(*, collaborator: TaskCollaborator, user) -> None:
     task = collaborator.task
+    target = collaborator.user.username if collaborator.user else collaborator.email
     collaborator.delete()
-    _changes = {'target': collaborator.user.username if collaborator.user else collaborator.email}
     log_audit(
-        user=user if (user and user.is_authenticated) else None,
+        user=_u(user),
         action='task.collaborator.remove',
         entity_type=task._meta.label,
         entity_id=str(task.pk),
-        description=_changes.get('description', ''),
-        changes=_changes,
-        ip_address=getattr(user, 'audit_ip', None),
+        description=f'Removed collaborator {target}',
+        changes={'target': target},
+        ip_address=_ip(user),
     )
+
+
+# Backward-compat alias.
+remove_collaborator = remove_task_collaborator
 
 
 def default_project(user) -> Project:
     """Return (or lazy-create) the catch-all inbox project used for promotions."""
     project, _ = Project.objects.get_or_create(
         slug='inbox',
-        defaults={'name': 'Inbox', 'color': 'gray', 'created_by': user if user and user.is_authenticated else None},
+        defaults={'name': 'Inbox', 'color': 'gray', 'created_by': _u(user)},
+    )
+    return project
+
+
+# ---------------------------------------------------------------------------
+# Project lifecycle services (NEW — Phase 3)
+# ---------------------------------------------------------------------------
+@transaction.atomic
+def create_project(
+    *, name: str, user, description: str = '', color: str = 'blue',
+    kind: str = Project.Kind.STANDARD, started_at=None, target_end_at=None,
+) -> Project:
+    """Create a project. Slug is auto-generated; ``Project.save()`` handles
+    collisions by appending a numeric suffix.
+    """
+    project = Project.objects.create(
+        name=name,
+        description=description,
+        color=color,
+        kind=kind,
+        started_at=started_at,
+        target_end_at=target_end_at,
+        created_by=_u(user),
+    )
+    log_audit(
+        user=_u(user),
+        action='project.create',
+        entity_type=project._meta.label,
+        entity_id=str(project.pk),
+        description=f'Created project "{name}"',
+        changes={'name': name, 'kind': kind, 'slug': project.slug},
+        ip_address=_ip(user),
+    )
+    return project
+
+
+@transaction.atomic
+def claim_project(
+    *, project: Project, user, by_manager=None, notes: str = '',
+) -> ProjectAssignment:
+    """Claim a project. Mirrors Harbor's reassign-on-conflict semantics:
+
+    - If the project is already claimed by ``user``, return the existing
+      assignment (idempotent self-claim).
+    - If claimed by someone else, mark the prior assignment ``REASSIGNED``
+      and create a new one.
+    - If unclaimed, create a fresh assignment.
+
+    ``by_manager`` is the manager performing a manager-initiated assignment;
+    when set, ``assignment_type`` is MANAGER_ASSIGNED instead of CLAIMED.
+    """
+    existing = ProjectAssignment.objects.filter(
+        project=project,
+        status=ProjectAssignment.Status.IN_PROGRESS,
+    ).first()
+    if existing and existing.assigned_to_id == user.id:
+        return existing
+    if existing:
+        existing.status = ProjectAssignment.Status.REASSIGNED
+        existing.released_at = timezone.now()
+        existing.save(update_fields=['status', 'released_at'])
+    assignment = ProjectAssignment.objects.create(
+        project=project,
+        assigned_to=user,
+        assigned_by=by_manager,
+        assignment_type=(
+            ProjectAssignment.AssignmentType.MANAGER_ASSIGNED if by_manager
+            else ProjectAssignment.AssignmentType.CLAIMED
+        ),
+        status=ProjectAssignment.Status.IN_PROGRESS,
+        notes=notes,
+    )
+    log_audit(
+        user=_u(user),
+        action='project.claim',
+        entity_type=project._meta.label,
+        entity_id=str(project.pk),
+        description=f'{user} claimed project {project.slug}',
+        changes={'reassigned': bool(existing)},
+        ip_address=_ip(user),
+    )
+    return assignment
+
+
+@transaction.atomic
+def release_project(
+    *, project: Project, user, notes: str = '',
+) -> ProjectAssignment | None:
+    """Release the user's active assignment on this project."""
+    assignment = ProjectAssignment.objects.filter(
+        project=project, assigned_to=user,
+        status=ProjectAssignment.Status.IN_PROGRESS,
+    ).first()
+    if not assignment:
+        return None
+    assignment.status = ProjectAssignment.Status.RELEASED
+    assignment.released_at = timezone.now()
+    if notes:
+        assignment.notes = (assignment.notes + '\n' + notes).strip() if assignment.notes else notes
+    assignment.save(update_fields=['status', 'released_at', 'notes'])
+    log_audit(
+        user=_u(user),
+        action='project.release',
+        entity_type=project._meta.label,
+        entity_id=str(project.pk),
+        description=f'{user} released project {project.slug}',
+        changes={'notes': notes} if notes else {},
+        ip_address=_ip(user),
+    )
+    return assignment
+
+
+@transaction.atomic
+def add_project_collaborator(
+    *, project: Project, user, target_user=None, email: str = '',
+    role: str = ProjectCollaborator.Role.CONTRIBUTOR,
+) -> ProjectCollaborator:
+    """Add a PROJECT-scoped collaborator. Distinct from
+    ``add_task_collaborator`` — project collaborators see the whole project.
+    """
+    if target_user is None and not email:
+        raise ValueError('Must provide target_user or email.')
+    defaults = {'role': role, 'invited_by': _u(user)}
+    if target_user is not None:
+        defaults['accepted_at'] = timezone.now()
+        collab, created = ProjectCollaborator.objects.get_or_create(
+            project=project, user=target_user, defaults=defaults,
+        )
+    else:
+        collab, created = ProjectCollaborator.objects.get_or_create(
+            project=project, email=email, defaults=defaults,
+        )
+    # If the row exists but was previously deactivated, re-activate it.
+    if not created and not collab.is_active:
+        collab.is_active = True
+        collab.role = role
+        collab.save(update_fields=['is_active', 'role'])
+    if created or not collab.is_active:
+        log_audit(
+            user=_u(user),
+            action='project.collaborator.invite',
+            entity_type=project._meta.label,
+            entity_id=str(project.pk),
+            description=f'Invited {target_user or email} as {role} to {project.slug}',
+            changes={'target': target_user.username if target_user else email, 'role': role},
+            ip_address=_ip(user),
+        )
+    return collab
+
+
+@transaction.atomic
+def remove_project_collaborator(*, collaborator: ProjectCollaborator, user) -> None:
+    """Soft-deactivate (set ``is_active=False``) rather than hard-delete, so
+    history queries can still surface who used to be on the project."""
+    if not collaborator.is_active:
+        return
+    project = collaborator.project
+    target = collaborator.user.username if collaborator.user else collaborator.email
+    collaborator.is_active = False
+    collaborator.save(update_fields=['is_active'])
+    log_audit(
+        user=_u(user),
+        action='project.collaborator.remove',
+        entity_type=project._meta.label,
+        entity_id=str(project.pk),
+        description=f'Removed collaborator {target} from {project.slug}',
+        changes={'target': target},
+        ip_address=_ip(user),
+    )
+
+
+@transaction.atomic
+def add_project_note(
+    *, project: Project, user, content: str, is_internal: bool = True,
+) -> ProjectNote:
+    note = ProjectNote.objects.create(
+        project=project,
+        author=_u(user),
+        content=content,
+        is_internal=is_internal,
+    )
+    log_audit(
+        user=_u(user),
+        action='project.note.add',
+        entity_type=project._meta.label,
+        entity_id=str(project.pk),
+        description=f'Added note ({len(content)} chars) to {project.slug}',
+        changes={'is_internal': is_internal, 'length': len(content)},
+        ip_address=_ip(user),
+    )
+    return note
+
+
+@transaction.atomic
+def add_project_attachment(
+    *, project: Project, user, file, description: str = '',
+    visibility: str = ProjectAttachment.Visibility.INTERNAL,
+) -> ProjectAttachment:
+    attachment = ProjectAttachment.objects.create(
+        project=project,
+        uploaded_by=_u(user),
+        file=file,
+        description=description,
+        visibility=visibility,
+        source=ProjectAttachment.Source.UPLOAD,
+    )
+    log_audit(
+        user=_u(user),
+        action='project.attachment.upload',
+        entity_type=project._meta.label,
+        entity_id=str(project.pk),
+        description=f'Uploaded {attachment.filename} to {project.slug}',
+        changes={'filename': attachment.filename, 'visibility': visibility},
+        ip_address=_ip(user),
+    )
+    return attachment
+
+
+@transaction.atomic
+def transition_project(
+    *, project: Project, user, target_status: str, comment: str = '',
+) -> Project:
+    """Engine-validated project status transition.
+
+    Side-effects:
+    - Stamps ``completed_at`` on transition into COMPLETED.
+    - Records a ``ProjectStatusHistory`` row via the workflow engine.
+
+    Role enforcement runs through ``ProjectWorkflowEngine._user_has_role``
+    (see ``tasks/workflow.py``) which resolves the ``'lead'`` keyword
+    against active assignments + LEAD-role collaborators.
+    """
+    project.transition(target_status, user=user, comment=comment)
+    if target_status == Project.Status.COMPLETED and not project.completed_at:
+        project.completed_at = timezone.now()
+        project.save(update_fields=['completed_at'])
+    log_audit(
+        user=_u(user),
+        action='project.transition',
+        entity_type=project._meta.label,
+        entity_id=str(project.pk),
+        description=f'Transitioned project {project.slug} to {target_status}',
+        changes={'target_status': target_status, 'comment': comment},
+        ip_address=_ip(user),
+    )
+    return project
+
+
+# Retention policy → years mapping (None = permanent, no expiry date).
+_RETENTION_YEARS = {
+    ArchivedProjectRecord.RetentionPolicy.STANDARD: 7,
+    ArchivedProjectRecord.RetentionPolicy.EXTENDED: 10,
+    ArchivedProjectRecord.RetentionPolicy.PERMANENT: None,
+}
+
+
+@transaction.atomic
+def archive_project(
+    *, project: Project, user, comment: str = '',
+    retention: str = ArchivedProjectRecord.RetentionPolicy.STANDARD,
+) -> Project:
+    """Archive a project. Writes BOTH:
+
+    1. The live row's ``status='archived'`` + ``archived_at=now`` (fast
+       filtering for active/archived list views), and
+    2. A new ``ArchivedProjectRecord`` row carrying retention policy and
+       NARA-shaped metadata for the keel-shipped purge_expired_archives
+       management command.
+
+    Idempotent: a second call on an already-archived project returns the
+    project unchanged.
+
+    Stashes ``previous_terminal_status`` so ``unarchive_project`` can
+    restore the prior state. The engine validates role permissions via
+    ``ProjectWorkflowEngine``.
+    """
+    if project.is_archived:
+        return project
+
+    # Remember the pre-archive status for unarchive UX.
+    project.previous_terminal_status = project.status
+
+    # Engine validates the transition AND records ProjectStatusHistory.
+    project.transition('archived', user=user, comment=comment or 'Archived')
+
+    project.archived_at = timezone.now()
+    project.save(update_fields=[
+        'archived_at', 'status', 'previous_terminal_status', 'updated_at',
+    ])
+
+    # Retention row.
+    years = _RETENTION_YEARS.get(retention, _RETENTION_YEARS[ArchivedProjectRecord.RetentionPolicy.STANDARD])
+    expires_at = timezone.now() + timedelta(days=365 * years) if years else None
+    ArchivedProjectRecord.objects.create(
+        entity_type='project',
+        entity_id=str(project.public_id),
+        entity_description=project.name,
+        retention_policy=retention,
+        original_created_at=project.created_at,
+        archived_by=_u(user),
+        retention_expires_at=expires_at,
+        metadata={
+            'slug': project.slug,
+            'kind': project.kind,
+            'completed_at': project.completed_at.isoformat() if project.completed_at else None,
+        },
+    )
+
+    log_audit(
+        user=_u(user),
+        action='archive',
+        entity_type=project._meta.label,
+        entity_id=str(project.pk),
+        description=comment or f'Archived project {project.slug}',
+        changes={'retention': retention, 'previous_terminal_status': project.previous_terminal_status},
+        ip_address=_ip(user),
+    )
+    return project
+
+
+@transaction.atomic
+def unarchive_project(*, project: Project, user, comment: str = '') -> Project:
+    """Restore an archived project to its prior terminal status (or
+    ``'active'`` as a fallback when ``previous_terminal_status`` is unset).
+
+    Idempotent: a no-op on an already-unarchived project.
+    """
+    if not project.is_archived:
+        return project
+
+    target = project.previous_terminal_status or Project.Status.ACTIVE
+    project.transition(target, user=user, comment=comment or 'Unarchived')
+    project.archived_at = None
+    project.previous_terminal_status = ''
+    project.save(update_fields=[
+        'archived_at', 'status', 'previous_terminal_status', 'updated_at',
+    ])
+
+    log_audit(
+        user=_u(user),
+        action='unarchive',
+        entity_type=project._meta.label,
+        entity_id=str(project.pk),
+        description=comment or f'Unarchived project {project.slug} → {target}',
+        changes={'restored_to': target},
+        ip_address=_ip(user),
     )
     return project

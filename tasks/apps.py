@@ -25,3 +25,6 @@ class TasksConfig(AppConfig):
         # at deploy startup). Without this, Django only imports a command
         # module when it's first invoked, leaving the registry empty.
         from tasks.management.commands import notify_due_tasks  # noqa: F401
+        # Register Helm's calendar event types with keel.calendar.
+        from tasks.calendar_events import register_calendar_event_types
+        register_calendar_event_types()

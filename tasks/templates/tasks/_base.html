@@ -9,6 +9,7 @@
             <a class="small text-decoration-none me-3{% if request.resolver_match.url_name == 'my_tasks' %} fw-semibold{% else %} text-muted{% endif %}" href="{% url 'tasks:my_tasks' %}">My Tasks</a>
             <a class="small text-decoration-none me-3{% if request.resolver_match.url_name == 'project_list' %} fw-semibold{% else %} text-muted{% endif %}" href="{% url 'tasks:project_list' %}">Projects</a>
             <a class="small text-decoration-none me-3{% if request.resolver_match.url_name == 'inbox' %} fw-semibold{% else %} text-muted{% endif %}" href="{% url 'tasks:inbox' %}">Inbox</a>
+            <a class="small text-decoration-none me-3{% if request.resolver_match.url_name == 'calendar_index' %} fw-semibold{% else %} text-muted{% endif %}" href="{% url 'tasks:calendar_index' %}">Calendar</a>
         </nav>
     </div>
     <div>

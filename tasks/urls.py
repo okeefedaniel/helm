@@ -1,6 +1,6 @@
 from django.urls import path
 
-from . import views
+from . import calendar_views, views
 
 app_name = 'tasks'
 
@@ -8,6 +8,11 @@ urlpatterns = [
     path('', views.my_tasks, name='my_tasks'),
     path('inbox/', views.inbox, name='inbox'),
     path('promote/', views.promote, name='promote'),
+
+    # Calendar — must come before any <slug:slug>/ route that could swallow it.
+    path('calendar/', calendar_views.calendar_index, name='calendar_index'),
+    path('calendar/events.json', calendar_views.calendar_events_json, name='calendar_events_json'),
+    path('calendar.ics', calendar_views.calendar_ical, name='calendar_ical'),
 
     # Project-level surface (must come before <slug:slug>/ to avoid swallowing).
     path('projects/', views.project_list, name='project_list'),

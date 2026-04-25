@@ -1,0 +1,7 @@
+Invited to {{ project.name }}
+
+{% if actor %}{{ actor.email|default:actor.username }} invited{% else %}You were invited{% endif %} to collaborate on {{ project.name }}{% if collaborator %} as a {{ collaborator.get_role_display|lower }}{% endif %}.
+
+Project collaborators see the whole project — all tasks, notes, attachments, and status changes.
+
+Open in Helm: {{ absolute_link }}

@@ -24,6 +24,7 @@ from django.db import transaction
 from django.utils import timezone
 
 from keel.core.audit import log_audit
+from keel.notifications import notify
 
 from .models import (
     ArchivedProjectRecord,
@@ -75,6 +76,12 @@ def create_task(*, project: Project, title: str, user, **fields) -> Task:
         changes={'title': title, 'project': project.slug},
         ip_address=_ip(user),
     )
+    if task.assignee_id and task.assignee_id != getattr(user, 'pk', None):
+        notify(
+            event='helm_task_assigned',
+            actor=_u(user),
+            context={'task': task, 'project': project, 'title': task.title},
+        )
     return task
 
 
@@ -102,6 +109,19 @@ def update_task(task: Task, *, user, **fields) -> Task:
             changes={'changed': list(changed.keys())},
             ip_address=_ip(user),
         )
+        # Newly assigned to someone other than the actor → notify them.
+        if 'assignee' in changed and task.assignee_id and task.assignee_id != getattr(user, 'pk', None):
+            notify(
+                event='helm_task_assigned',
+                actor=_u(user),
+                context={'task': task, 'project': task.project, 'title': task.title},
+            )
+        if 'status' in changed:
+            notify(
+                event='helm_task_status_changed',
+                actor=_u(user),
+                context={'task': task, 'project': task.project, 'title': task.title},
+            )
     return task
 
 
@@ -149,6 +169,11 @@ def transition_task(*, task: Task, user, target_status: str, comment: str = '') 
         description=f'Transitioned task to {target_status}',
         changes={'target_status': target_status, 'comment': comment},
         ip_address=_ip(user),
+    )
+    notify(
+        event='helm_task_status_changed',
+        actor=_u(user),
+        context={'task': task, 'project': task.project, 'title': task.title},
     )
     return task
 
@@ -336,6 +361,14 @@ def claim_project(
         changes={'reassigned': bool(existing)},
         ip_address=_ip(user),
     )
+    # On manager-initiated claim, notify the new lead (don't notify on
+    # self-claim — the user just performed the action).
+    if by_manager is not None:
+        notify(
+            event='helm_project_assigned',
+            actor=_u(by_manager),
+            context={'project': project, 'recipient': user, 'title': project.name},
+        )
     return assignment
 
 
@@ -405,6 +438,44 @@ def add_project_collaborator(
             changes={'target': target_user.username if target_user else email, 'role': role},
             ip_address=_ip(user),
         )
+        if target_user is not None:
+            # Internal user — standard in-app + email path.
+            notify(
+                event='helm_project_collaborator_invited',
+                actor=_u(user),
+                context={'project': project, 'collaborator': collab, 'title': project.name},
+            )
+        else:
+            # External email — caller-supplied recipients (no User row).
+            # Per "no magic links" policy, the email body just links to the
+            # project; if they sign in via SSO they'll get access via the
+            # collaborator row.
+            from django.core.mail import send_mail
+            from django.template.loader import render_to_string
+            from django.conf import settings
+            ctx = {
+                'project': project, 'collaborator': collab,
+                'title': project.name, 'invited_by': user,
+                'site_url': getattr(settings, 'KEEL_PRODUCT_HOST', '') + project.get_absolute_url(),
+            }
+            try:
+                body_html = render_to_string(
+                    'notifications/emails/helm_project_collaborator_invited_external.html', ctx,
+                )
+                body_txt = render_to_string(
+                    'notifications/emails/helm_project_collaborator_invited_external.txt', ctx,
+                )
+                send_mail(
+                    subject=f'You were invited to a Helm project: {project.name}',
+                    message=body_txt,
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    recipient_list=[email],
+                    html_message=body_html,
+                    fail_silently=True,
+                )
+            except Exception:
+                # Email dispatch is best-effort; don't fail the invite txn.
+                pass
     return collab
 
 
@@ -448,6 +519,11 @@ def add_project_note(
         changes={'is_internal': is_internal, 'length': len(content)},
         ip_address=_ip(user),
     )
+    notify(
+        event='helm_project_note_added',
+        actor=_u(user),
+        context={'project': project, 'note': note, 'title': project.name},
+    )
     return note
 
 
@@ -472,6 +548,11 @@ def add_project_attachment(
         description=f'Uploaded {attachment.filename} to {project.slug}',
         changes={'filename': attachment.filename, 'visibility': visibility},
         ip_address=_ip(user),
+    )
+    notify(
+        event='helm_project_attachment_added',
+        actor=_u(user),
+        context={'project': project, 'attachment': attachment, 'title': project.name},
     )
     return attachment
 
@@ -502,6 +583,11 @@ def transition_project(
         description=f'Transitioned project {project.slug} to {target_status}',
         changes={'target_status': target_status, 'comment': comment},
         ip_address=_ip(user),
+    )
+    notify(
+        event='helm_project_status_changed',
+        actor=_u(user),
+        context={'project': project, 'title': project.name, 'new_status': target_status},
     )
     return project
 
@@ -575,6 +661,11 @@ def archive_project(
         changes={'retention': retention, 'previous_terminal_status': project.previous_terminal_status},
         ip_address=_ip(user),
     )
+    notify(
+        event='helm_project_archived',
+        actor=_u(user),
+        context={'project': project, 'title': project.name},
+    )
     return project
 
 
@@ -604,5 +695,10 @@ def unarchive_project(*, project: Project, user, comment: str = '') -> Project:
         description=comment or f'Unarchived project {project.slug} → {target}',
         changes={'restored_to': target},
         ip_address=_ip(user),
+    )
+    notify(
+        event='helm_project_unarchived',
+        actor=_u(user),
+        context={'project': project, 'title': project.name},
     )
     return project

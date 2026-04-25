@@ -1,0 +1,13 @@
+{% extends "notifications/emails/_helm_email_base.html" %}
+
+{% block heading %}<h2 style="color:#00214D; margin:0 0 14px; font-size:18px;">You're now leading {{ project.name }}</h2>{% endblock %}
+
+{% block body %}
+<p style="margin:0 0 14px; line-height:1.5;">
+  {% if actor %}<strong>{{ actor.email|default:actor.username }}</strong> assigned you as the lead on{% else %}You were assigned as the lead on{% endif %}
+  <strong>{{ project.name }}</strong>.
+</p>
+<p style="margin:0 0 14px; line-height:1.5; color:#6b7280; font-size:14px;">
+  As the lead, you can transition the project through stages, invite collaborators, and archive when complete.
+</p>
+{% endblock %}

@@ -1,0 +1,8 @@
+Task due soon: {{ task.title }}
+
+Your task in {{ project.name }} is due {% if task.due_date %}{{ task.due_date|date:"l, M j" }}{% else %}soon{% endif %}.
+
+  {{ task.title }}
+  Status: {{ task.get_status_display }} · Priority: {{ task.get_priority_display }}
+
+Open in Helm: {{ absolute_link }}

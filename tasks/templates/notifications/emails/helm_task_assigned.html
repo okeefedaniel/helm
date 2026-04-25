@@ -1,0 +1,20 @@
+{% extends "notifications/emails/_helm_email_base.html" %}
+
+{% block heading %}<h2 style="color:#00214D; margin:0 0 14px; font-size:18px;">New task: {{ task.title }}</h2>{% endblock %}
+
+{% block body %}
+<p style="margin:0 0 14px; line-height:1.5;">
+  {% if actor %}<strong>{{ actor.email|default:actor.username }}</strong> assigned you{% else %}You were assigned{% endif %}
+  a task in <strong>{{ project.name }}</strong>:
+</p>
+<table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin:14px 0;">
+  <tr><td style="padding:8px 12px; background:#f9fafb; border-left:3px solid #1F64E5;">
+    <strong>{{ task.title }}</strong>
+    {% if task.description %}<p style="margin:6px 0 0; color:#6b7280; font-size:14px;">{{ task.description|truncatewords:30 }}</p>{% endif %}
+    <p style="margin:6px 0 0; color:#6b7280; font-size:13px;">
+      Priority: <strong>{{ task.get_priority_display }}</strong>
+      {% if task.due_date %} &middot; Due: <strong>{{ task.due_date|date:"M j, Y" }}</strong>{% endif %}
+    </p>
+  </td></tr>
+</table>
+{% endblock %}

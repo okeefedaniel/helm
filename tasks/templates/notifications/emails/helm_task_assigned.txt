@@ -1,0 +1,9 @@
+New task: {{ task.title }}
+
+{% if actor %}{{ actor.email|default:actor.username }} assigned{% else %}You were assigned{% endif %} a task in {{ project.name }}:
+
+  {{ task.title }}
+  {% if task.description %}{{ task.description|truncatewords:30 }}{% endif %}
+  Priority: {{ task.get_priority_display }}{% if task.due_date %} · Due: {{ task.due_date|date:"M j, Y" }}{% endif %}
+
+Open in Helm: {{ absolute_link }}

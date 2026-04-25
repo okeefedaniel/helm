@@ -1,0 +1,7 @@
+You were invited to {{ project.name }}
+
+{{ invited_by.email|default:invited_by.username }} invited you to collaborate on {{ project.name }} as a {{ collaborator.get_role_display|lower }}.
+
+Sign in to Helm to view the project. If you don't have an account yet, use single sign-on with your DockLabs identity.
+
+{% if site_url %}Open project: {{ site_url }}{% endif %}

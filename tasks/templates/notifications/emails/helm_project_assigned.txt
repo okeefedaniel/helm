@@ -1,0 +1,10 @@
+You're now leading {{ project.name }}
+
+{% if actor %}{{ actor.email|default:actor.username }} assigned{% else %}You were assigned{% endif %} as the lead on {{ project.name }}.
+
+As the lead, you can transition the project through stages, invite collaborators, and archive when complete.
+
+Open in Helm: {{ absolute_link }}
+
+—
+Adjust notification preferences at /notifications/preferences/

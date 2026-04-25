@@ -1,0 +1,8 @@
+Task overdue: {{ task.title }}
+
+Your task in {{ project.name }} is past its {% if task.due_date %}{{ task.due_date|date:"M j" }} {% endif %}due date.
+
+  {{ task.title }}
+  Status: {{ task.get_status_display }} · Priority: {{ task.get_priority_display }}
+
+Open in Helm: {{ absolute_link }}

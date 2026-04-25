@@ -22,11 +22,13 @@
     border-left: 4px solid var(--ct-blue);
 }
 
-/* -- Fleet Health Badges -- */
-.fleet-health-green { background-color: var(--ct-green) !important; color: #fff; }
-.fleet-health-yellow { background-color: var(--ct-yellow) !important; color: var(--ct-dark-gray); }
-.fleet-health-red { background-color: var(--ct-red) !important; color: #fff; }
-.fleet-health-gray { background-color: #6c757d !important; color: #fff; }
+/* -- Fleet Health Badges --
+   Uses docklabs-v2 semantic colors (forest/brass/brick) so the .pill base
+   class doesn't show its light --surface bg through an undefined var. */
+.fleet-health-green { background-color: var(--success) !important; color: #fff !important; border-color: transparent !important; }
+.fleet-health-yellow { background-color: var(--warning) !important; color: #fff !important; border-color: transparent !important; }
+.fleet-health-red { background-color: var(--error) !important; color: #fff !important; border-color: transparent !important; }
+.fleet-health-gray { background-color: #6c757d !important; color: #fff !important; border-color: transparent !important; }
 
 /* -- Product Cards -- */
 .product-card {
@@ -42,10 +44,10 @@
 /* -- Metric Widgets -- */
 .metric-widget {
     border-radius: 0.5rem;
-    background: var(--ct-light-gray);
+    background: var(--bg-warm);
 }
 .metric-value {
-    color: var(--ct-dark-blue);
+    color: var(--ct-blue);
     line-height: 1.2;
 }
 .metric-label {
@@ -60,7 +62,7 @@
 
 /* -- Action Queue -- */
 .list-group-item-action:hover {
-    background-color: var(--ct-pale-blue);
+    background-color: var(--bg-hover);
 }
 
 /* -- Sparkline Charts -- */
@@ -125,12 +127,12 @@
 /* -- Product Launcher Cards -- */
 .product-launcher-card {
     transition: transform 0.15s ease, box-shadow 0.15s ease;
-    color: var(--ct-dark-gray);
+    color: var(--text-primary);
 }
 .product-launcher-card:hover {
     transform: translateY(-3px);
     box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.12) !important;
-    color: var(--ct-dark-gray);
+    color: var(--text-primary);
 }
 
 /* -- Responsive Tweaks -- */

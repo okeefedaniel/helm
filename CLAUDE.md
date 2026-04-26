@@ -67,12 +67,13 @@ The graceful-fallback path in `InboxAggregator` (aggregate `ActionItem` count + 
 
 ## Cron jobs
 
-Schedules run externally (Railway cron service / GitHub Actions / cron-job.org). `keel.scheduling` provides observability — every `@scheduled_job`-decorated command writes a `CommandRun` row visible at `/scheduling/`. The `enabled` flag on the dashboard is display-only — toggling it does NOT pause the cron itself.
+Schedules are fired by [`.github/workflows/cron.yml`](.github/workflows/cron.yml), which uses the Railway CLI (auth via the `RAILWAY_TOKEN` repo secret — a project token scoped to helm/production) to SSH into the running web container and exec `python manage.py <cmd>`. `keel.scheduling` provides observability — every `@scheduled_job`-decorated command writes a `CommandRun` row visible at `/scheduling/`. The `enabled` flag on the dashboard is display-only — toggling it does NOT pause the GitHub Actions schedule.
 
 Helm's registered jobs:
 
 | Slug | Schedule | Command | Notes |
 |---|---|---|---|
+| `helm-fetch-feeds` | `*/15 * * * *` UTC | `python manage.py fetch_feeds` | Pulls each peer's `/api/v1/helm-feed/` into `CachedFeedSnapshot`. Parallel + circuit-breaker built in. |
 | `helm-notify-due-tasks` | `0 9 * * *` UTC | `python manage.py notify_due_tasks` | Idempotent via `Task.last_due_soon_notif_at` / `last_overdue_notif_at` (24h cooldown). |
 
 `startup.py` runs `sync_scheduled_jobs` on every deploy, so the dashboard stays in step with code declarations.

@@ -25,6 +25,8 @@ from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.utils import timezone
 
+from keel.scheduling import scheduled_job
+
 from dashboard.models import CachedFeedSnapshot
 
 logger = logging.getLogger(__name__)
@@ -36,6 +38,18 @@ DEFAULT_PER_FETCH_TIMEOUT_SECONDS = 15
 MAX_WORKERS = 8
 
 
+@scheduled_job(
+    slug='helm-fetch-feeds',
+    name='Helm — Fetch peer product feeds',
+    cron='*/15 * * * *',
+    owner='helm',
+    description=(
+        'Pulls /api/v1/helm-feed/ from each fleet product and refreshes '
+        'CachedFeedSnapshot rows. Parallel + circuit-breaker out of the box.'
+    ),
+    notes='Fired by .github/workflows/cron.yml every 15 minutes UTC.',
+    timeout_minutes=5,
+)
 class Command(BaseCommand):
     help = 'Fetch helm-feed data from all fleet products and cache locally'
 

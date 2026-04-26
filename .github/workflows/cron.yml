@@ -1,0 +1,62 @@
+name: Cron
+
+# Fires Helm's scheduled management commands. Each job uses the Railway CLI
+# to SSH into the running web container and exec the command there, so it
+# shares the production env (DATABASE_URL, HELM_FEED_API_KEY, etc.) and the
+# prod DB connection without exposing either to the GitHub runner.
+#
+# Wired commands (must match @scheduled_job slugs in code):
+#   - helm-fetch-feeds      every 15m  — dashboard.management.commands.fetch_feeds
+#   - helm-notify-due-tasks 09:00 UTC  — tasks.management.commands.notify_due_tasks
+#
+# Required GitHub secret:
+#   RAILWAY_TOKEN — a Railway *project* token (Settings → Tokens) scoped to
+#   the helm project, production environment. Project tokens automatically
+#   target their bound project/env, so no --project / --environment flag is
+#   needed in CI.
+#
+# Observability: every run writes a CommandRun row visible at /scheduling/.
+# A silent cron is itself a canary — /api/v1/metrics/ exposes
+# `flags.cron_silent_24h` which flips true if no CommandRun rows land in 24h.
+
+on:
+  schedule:
+    - cron: '*/15 * * * *'   # helm-fetch-feeds — every 15 minutes
+    - cron: '0 9 * * *'      # helm-notify-due-tasks — 09:00 UTC daily
+  workflow_dispatch:
+    inputs:
+      command:
+        description: 'Which command to run'
+        required: true
+        default: fetch_feeds
+        type: choice
+        options:
+          - fetch_feeds
+          - notify_due_tasks
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    env:
+      RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+    steps:
+      - name: Pick command from cron schedule
+        id: pick
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "cmd=${{ github.event.inputs.command }}" >> "$GITHUB_OUTPUT"
+          elif [ "${{ github.event.schedule }}" = "0 9 * * *" ]; then
+            echo "cmd=notify_due_tasks" >> "$GITHUB_OUTPUT"
+          else
+            echo "cmd=fetch_feeds" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Install Railway CLI
+        run: |
+          curl -fsSL https://railway.com/install.sh | sh
+          echo "$HOME/.railway/bin" >> "$GITHUB_PATH"
+
+      - name: Run management command in production container
+        run: |
+          railway ssh --service helm \
+            "cd /app && /opt/venv/bin/python manage.py ${{ steps.pick.outputs.cmd }}"

@@ -14,12 +14,12 @@
 
 {% block sidebar_brand_icon %}bi-hexagon{% endblock %}
 {% block sidebar_brand_name %}Helm{% endblock %}
-{% block sidebar_brand_href %}{% if user.is_authenticated %}{% url 'dashboard:index' %}{% else %}/{% endif %}{% endblock %}
+{% block sidebar_brand_href %}{% if user.is_authenticated %}{% url 'dashboard_alias' %}{% else %}/{% endif %}{% endblock %}
 
 {% block sidebar_favorites %}
 <div class="sb-section">
   <div class="sb-section-label">Favorites</div>
-  <a class="sb-item{% if request.resolver_match.url_name == 'index' %} active{% endif %}" href="{% url 'dashboard:index' %}">
+  <a class="sb-item{% if request.resolver_match.url_name == 'dashboard_alias' %} active{% endif %}" href="{% url 'dashboard_alias' %}">
     <span class="sb-icon"><i class="bi bi-speedometer2"></i></span>
     <span class="sb-item-label">Dashboard</span>
   </a>
@@ -30,7 +30,7 @@
 <div class="sb-section">
   <div class="sb-section-label">Workspace</div>
 
-  <a class="sb-item{% if request.resolver_match.url_name == 'index' %} active{% endif %}" href="{% url 'dashboard:index' %}">
+  <a class="sb-item{% if request.resolver_match.url_name == 'dashboard_alias' %} active{% endif %}" href="{% url 'dashboard_alias' %}">
     <span class="sb-toggle" style="visibility:hidden">&rsaquo;</span>
     <span class="sb-icon"><i class="bi bi-speedometer2"></i></span>
     <span class="sb-item-label">Dashboard</span>

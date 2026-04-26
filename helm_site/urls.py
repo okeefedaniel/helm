@@ -30,7 +30,7 @@ urlpatterns = [
     # Root — landing page for visitors, redirect to dashboard for logged-in users
     path('', LandingView.as_view(
         template_name='landing.html',
-        authenticated_redirect='dashboard:index',
+        authenticated_redirect='dashboard_alias',
         stats=[
             {'value': '9', 'label': 'Products'},
             {'value': '1', 'label': 'Identity'},

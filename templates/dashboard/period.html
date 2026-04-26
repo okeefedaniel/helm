@@ -7,7 +7,7 @@
 <nav aria-label="breadcrumb" class="bg-light border-bottom">
     <div class="container-fluid">
         <ol class="breadcrumb mb-0 py-2 small">
-            <li class="breadcrumb-item"><a href="{% url 'dashboard:index' %}">Dashboard</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'dashboard_alias' %}">Dashboard</a></li>
             <li class="breadcrumb-item active">{{ period.label|default:"Period" }}</li>
         </ol>
     </div>
@@ -46,7 +46,7 @@
 <div class="text-center text-muted py-5">
     <i class="bi bi-calendar-x fs-1 d-block mb-3"></i>
     <p>Period not found.</p>
-    <a href="{% url 'dashboard:index' %}" class="btn btn-outline-primary">Back to Dashboard</a>
+    <a href="{% url 'dashboard_alias' %}" class="btn btn-outline-primary">Back to Dashboard</a>
 </div>
 {% endif %}
 {% endblock %}

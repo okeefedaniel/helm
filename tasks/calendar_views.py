@@ -35,7 +35,21 @@ from django.utils import timezone
 from keel.calendar import generate_ical
 from keel.calendar.ical import ical_response
 
+from tasks.foia import urgency_tier
 from tasks.models import Project, Task
+
+
+# FOIA urgency tier → FullCalendar color mapping. Mirrors the
+# _foia_clock.html partial so the badge and the calendar event read the
+# same color for the same project.
+_FOIA_TIER_COLOR = {
+    'overdue': '#dc2626',  # red
+    'urgent': '#dc2626',   # red
+    'warning': '#ea580c',  # orange
+    'caution': '#f59e0b',  # amber
+    'tolled': '#6b7280',   # gray
+    'ok': '#10b981',       # green
+}
 
 
 # ---------------------------------------------------------------------------
@@ -136,6 +150,24 @@ def calendar_events_json(request):
                 'color': '#10b981',  # green
                 'extendedProps': {'kind': 'project_completed'},
             })
+        # FOIA statutory deadlines surface as a separate event colored by
+        # urgency_tier — independent of target_end_at, since FOIA projects
+        # often only have the statutory deadline set, not target_end_at.
+        if p.kind == Project.Kind.FOIA and p.foia_statutory_deadline_at:
+            tier = urgency_tier(p, today=today)
+            events.append({
+                'id': f'p-foia-{p.pk}',
+                'title': f'⚖ FOIA: {p.name}',
+                'start': p.foia_statutory_deadline_at.isoformat(),
+                'allDay': True,
+                'url': p.get_absolute_url(),
+                'color': _FOIA_TIER_COLOR.get(tier, '#3b82f6'),
+                'extendedProps': {
+                    'kind': 'foia_statutory_deadline',
+                    'urgency_tier': tier,
+                    'jurisdiction': p.foia_jurisdiction,
+                },
+            })
 
     # Tasks due — color by status / overdue.
     for t in _task_visible_qs(request.user):
@@ -195,6 +227,16 @@ def calendar_ical(request):
                 end_time=p.completed_at,
                 description='Project completed.',
                 all_day=False,
+            ))
+        if p.kind == Project.Kind.FOIA and p.foia_statutory_deadline_at:
+            jurisdiction_label = p.get_foia_jurisdiction_display()
+            events.append(_ICalEvent(
+                id=f'p-foia-{p.pk}@helm.docklabs.ai',
+                title=f'FOIA Statutory Deadline: {p.name}',
+                start_time=_date_to_dt(p.foia_statutory_deadline_at),
+                end_time=_date_to_dt(p.foia_statutory_deadline_at, end=True),
+                description=f'Jurisdiction: {jurisdiction_label}',
+                all_day=True,
             ))
 
     for t in _task_visible_qs(user):

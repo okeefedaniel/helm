@@ -15,6 +15,7 @@ from keel.calendar import CalendarEventType, register
 PROJECT_TARGET_END = 'helm.project_target_end'
 PROJECT_COMPLETED = 'helm.project_completed'
 TASK_DUE = 'helm.task_due'
+FOIA_STATUTORY_DEADLINE = 'helm.foia_statutory_deadline'
 
 
 def register_calendar_event_types():
@@ -37,6 +38,13 @@ def register_calendar_event_types():
         key=TASK_DUE,
         label='Helm — Task due',
         description='A task due date.',
+        default_duration_minutes=15,
+        include_location=False,
+    ))
+    register(CalendarEventType(
+        key=FOIA_STATUTORY_DEADLINE,
+        label='Helm — FOIA statutory deadline',
+        description='Statutory response deadline for a FOIA request.',
         default_duration_minutes=15,
         include_location=False,
     ))

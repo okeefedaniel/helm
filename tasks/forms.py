@@ -9,7 +9,32 @@ from .models import (
 User = get_user_model()
 
 
-class ProjectForm(forms.ModelForm):
+class BootstrapFormMixin:
+    """Auto-apply Bootstrap classes to widgets that don't already declare one.
+
+    Keeps every Helm form aligned with the keel design system without each
+    field having to set `attrs={'class': 'form-control'}` by hand.
+    """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field in self.fields.values():
+            widget = field.widget
+            existing = widget.attrs.get('class', '')
+            if 'form-control' in existing or 'form-select' in existing or 'form-check-input' in existing:
+                continue
+            if isinstance(widget, (forms.CheckboxInput, forms.RadioSelect, forms.CheckboxSelectMultiple)):
+                bs_class = 'form-check-input'
+            elif isinstance(widget, (forms.Select, forms.SelectMultiple)):
+                bs_class = 'form-select'
+            elif isinstance(widget, forms.FileInput):
+                bs_class = 'form-control'
+            else:
+                bs_class = 'form-control'
+            widget.attrs['class'] = (existing + ' ' + bs_class).strip()
+
+
+class ProjectForm(BootstrapFormMixin, forms.ModelForm):
     class Meta:
         model = Project
         fields = ['name', 'description', 'color']
@@ -18,7 +43,7 @@ class ProjectForm(forms.ModelForm):
         }
 
 
-class TaskForm(forms.ModelForm):
+class TaskForm(BootstrapFormMixin, forms.ModelForm):
     class Meta:
         model = Task
         fields = ['title', 'description', 'status', 'priority', 'assignee', 'due_date']
@@ -28,7 +53,7 @@ class TaskForm(forms.ModelForm):
         }
 
 
-class TaskCommentForm(forms.ModelForm):
+class TaskCommentForm(BootstrapFormMixin, forms.ModelForm):
     class Meta:
         model = TaskComment
         fields = ['body']
@@ -37,7 +62,7 @@ class TaskCommentForm(forms.ModelForm):
         }
 
 
-class PromoteForm(forms.Form):
+class PromoteForm(BootstrapFormMixin, forms.Form):
     title = forms.CharField(max_length=240)
     description = forms.CharField(widget=forms.Textarea(attrs={'rows': 2}), required=False)
     priority = forms.ChoiceField(choices=Task.Priority.choices, initial=Task.Priority.MEDIUM)
@@ -48,7 +73,7 @@ class PromoteForm(forms.Form):
     url = forms.URLField()
 
 
-class ProjectCollaboratorForm(forms.Form):
+class ProjectCollaboratorForm(BootstrapFormMixin, forms.Form):
     """Add a project-level collaborator. Either user_id or email required."""
 
     user_id = forms.CharField(required=False)
@@ -65,7 +90,7 @@ class ProjectCollaboratorForm(forms.Form):
         return cleaned
 
 
-class ProjectNoteForm(forms.ModelForm):
+class ProjectNoteForm(BootstrapFormMixin, forms.ModelForm):
     class Meta:
         model = ProjectNote
         fields = ['content', 'is_internal']
@@ -76,13 +101,13 @@ class ProjectNoteForm(forms.ModelForm):
         }
 
 
-class ProjectAttachmentForm(forms.ModelForm):
+class ProjectAttachmentForm(BootstrapFormMixin, forms.ModelForm):
     class Meta:
         model = ProjectAttachment
         fields = ['file', 'description', 'visibility']
 
 
-class ProjectTransitionForm(forms.Form):
+class ProjectTransitionForm(BootstrapFormMixin, forms.Form):
     """Single-field status change. Engine validates the transition."""
 
     status = forms.ChoiceField(choices=Project.Status.choices)

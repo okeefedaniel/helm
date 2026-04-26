@@ -21,6 +21,7 @@ from django.core.management import call_command
 from django.test import TransactionTestCase, override_settings
 from django.utils import timezone
 
+from dashboard.management.commands.fetch_feeds import Command as FetchFeedsCommand
 from dashboard.models import CachedFeedSnapshot
 
 
@@ -102,47 +103,95 @@ class FetchFeedsParallelTests(TransactionTestCase):
 
         self.assertEqual(peak[0], 1)
 
+    def _wait_for_straggler(self, product='harbor', timeout=10.0):
+        """Block until the abandoned background thread commits its write.
+
+        Without this the straggler can still hold the SQLite write lock
+        when the next test starts, silently blocking that test's writes
+        and causing flakes that look unrelated.
+        """
+        deadline = time.monotonic() + timeout
+        while time.monotonic() < deadline:
+            if CachedFeedSnapshot.objects.filter(product=product).exists():
+                return
+            time.sleep(0.05)
+
     def test_overall_timeout_abandons_stragglers(self):
         """A product hanging past the budget does not stall the command."""
+        # Generous bounds so the assertion is about behavior (the kill
+        # switch fires before the slow product completes), not wall-clock
+        # precision on a loaded CI machine. Slow product blocks 30s; budget
+        # is 3s; we assert we returned in well under the slow wait.
         release = threading.Event()
 
         def fetch(url, api_key, timeout=None):
             if 'harbor' in url:
-                release.wait(timeout=5)
+                release.wait(timeout=30)
             return _ok()
+
+        # See test_slow_product_does_not_stall_fast_ones for why the fast
+        # products' writes are serialized — SQLite-only test artifact.
+        write_lock = threading.Lock()
+        original_fetch_one = FetchFeedsCommand._fetch_one
+
+        def serialized_fetch_one(self, product, *args, **kwargs):
+            if product['key'] == 'harbor':
+                return original_fetch_one(self, product, *args, **kwargs)
+            with write_lock:
+                return original_fetch_one(self, product, *args, **kwargs)
 
         try:
             with mock.patch(
                 'keel.feed.client.fetch_product_feed', side_effect=fetch
+            ), mock.patch.object(
+                FetchFeedsCommand, '_fetch_one', serialized_fetch_one
             ):
                 out = StringIO()
                 start = time.monotonic()
                 call_command(
-                    'fetch_feeds', '--overall-timeout=1', stdout=out
+                    'fetch_feeds', '--overall-timeout=3', stdout=out
                 )
                 elapsed = time.monotonic() - start
 
-            self.assertLess(elapsed, 2.0)
+            self.assertLess(elapsed, 10.0)
             self.assertIn('abandoned', out.getvalue())
         finally:
             release.set()  # let the straggler finish so it doesn't leak
-            # Give the background thread a moment to write before teardown.
-            time.sleep(0.2)
+            self._wait_for_straggler('harbor')
 
     def test_slow_product_does_not_stall_fast_ones(self):
+        # Generous budget so fast (no-op) fetches reliably complete on a
+        # loaded CI machine. The slow product blocks for 30s — far longer
+        # than the overall-timeout — so it is always abandoned.
         release = threading.Event()
 
         def fetch(url, api_key, timeout=None):
             if 'harbor' in url:
-                release.wait(timeout=5)
+                release.wait(timeout=30)
             return _ok()
+
+        # Serialize the fast products' DB writes. Production uses Postgres,
+        # but tests run on SQLite, where two threads writing concurrently
+        # raise "database is locked" and silently fail the future. Harbor
+        # still runs concurrently so the overall-timeout abandonment path
+        # is exercised as in production.
+        write_lock = threading.Lock()
+        original_fetch_one = FetchFeedsCommand._fetch_one
+
+        def serialized_fetch_one(self, product, *args, **kwargs):
+            if product['key'] == 'harbor':
+                return original_fetch_one(self, product, *args, **kwargs)
+            with write_lock:
+                return original_fetch_one(self, product, *args, **kwargs)
 
         try:
             with mock.patch(
                 'keel.feed.client.fetch_product_feed', side_effect=fetch
+            ), mock.patch.object(
+                FetchFeedsCommand, '_fetch_one', serialized_fetch_one
             ):
                 call_command(
-                    'fetch_feeds', '--overall-timeout=1', stdout=StringIO()
+                    'fetch_feeds', '--overall-timeout=5', stdout=StringIO()
                 )
 
             fresh = set(
@@ -156,7 +205,7 @@ class FetchFeedsParallelTests(TransactionTestCase):
             )
         finally:
             release.set()
-            time.sleep(0.2)
+            self._wait_for_straggler('harbor')
 
 
 @override_settings(FLEET_PRODUCTS=FAKE_FLEET, HELM_FEED_API_KEY='k', DEMO_MODE=False)

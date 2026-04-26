@@ -77,6 +77,6 @@ jobs:
           coverage report --fail-under=0 || true
 
   security:
-    uses: okeefedaniel/keel/.github/workflows/security.yml@30fc6417bf65783f9aa3713dd9179ef184b78eee
+    uses: okeefedaniel/keel/.github/workflows/security.yml@v0.19.0
     with:
       python-version: '3.12'

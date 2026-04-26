@@ -1,8 +1,10 @@
 {% load humanize helm_tags %}
 
-{# Per-product drill-down panel — htmx-loaded into #product-drilldown when
-   a metric card on tab 2 is clicked. Shows the full feed payload for one
-   peer: metrics, sparklines, action items, alerts, freshness. #}
+{% comment %}
+Per-product drill-down panel — htmx-loaded into #product-drilldown when
+a metric card on tab 2 is clicked. Shows the full feed payload for one
+peer: metrics, sparklines, action items, alerts, freshness.
+{% endcomment %}
 <div class="card border-0 shadow-sm">
     <div class="card-header bg-white border-bottom py-2 d-flex justify-content-between align-items-center">
         <h6 class="mb-0 small">

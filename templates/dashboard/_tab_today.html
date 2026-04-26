@@ -1,9 +1,11 @@
 {% load humanize helm_tags %}
 
-{# Tab 1: Today — personal inbox.
-   Three columns: my Helm work (deadline rail), cross-suite inbox, alerts.
-   Each column refreshes independently via htmx so a slow peer doesn't
-   block the whole tab. #}
+{% comment %}
+Tab 1: Today — personal inbox.
+Three columns: my Helm work (deadline rail), cross-suite inbox, alerts.
+Each column refreshes independently via htmx so a slow peer doesn't
+block the whole tab.
+{% endcomment %}
 <div class="row g-3">
     <div class="col-lg-4">
         <div hx-get="{% url 'dashboard:partial-deadline-rail' %}"

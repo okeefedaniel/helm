@@ -1,10 +1,12 @@
 {% load humanize helm_tags %}
 
-{# Tab 2: Across the suite — situational awareness.
-   This is the original dashboard content (period bar, metrics grid,
-   action queue, alerts, all action items, bookmarks) plus a drill-down
-   panel area that loads per-product detail via htmx when a metric card
-   is clicked. #}
+{% comment %}
+Tab 2: Across the suite — situational awareness.
+This is the original dashboard content (period bar, metrics grid,
+action queue, alerts, all action items, bookmarks) plus a drill-down
+panel area that loads per-product detail via htmx when a metric card
+is clicked.
+{% endcomment %}
 
 {# === Row 1: Period bar + fleet health + compact product launcher === #}
 <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
@@ -31,14 +33,12 @@
     </div>
 </div>
 
-{# === Row 2: Product metrics grid — the hero section.
-       Each card is clickable to open the drill-down panel. === #}
+{# === Row 2: Product metrics grid — the hero section. Each card opens drill-down. === #}
 <div class="mb-3" hx-get="{% url 'dashboard:partial-metrics' %}" hx-trigger="every 60s" hx-swap="innerHTML">
     {% include "partials/metrics_grid.html" %}
 </div>
 
-{# === Row 3: Drill-down panel target — htmx swaps in per-product detail
-       when a metric card is clicked. Default state shows a hint. === #}
+{# === Row 3: Drill-down panel target — htmx swaps in per-product detail. === #}
 <div id="product-drilldown" class="mb-3">
     <div class="card border-0 shadow-sm">
         <div class="card-body text-center text-muted small py-3">

@@ -79,14 +79,16 @@ Helm's registered jobs:
 
 ## Operational metrics
 
-`GET /api/v1/metrics/` (staff-only) returns JSON counters useful for monitoring:
+`GET /api/v1/metrics/` returns JSON counters useful for monitoring. Auth: either staff session (browser) **or** `Authorization: Bearer $HELM_METRICS_TOKEN` for external pollers.
 
 ```bash
-curl -b "sessionid=..." https://helm.docklabs.ai/api/v1/metrics/ | jq .flags
+# External monitoring (cron-job.org, BetterUptime, Pingdom, etc.):
+curl -H "Authorization: Bearer $HELM_METRICS_TOKEN" \
+  https://helm.docklabs.ai/api/v1/metrics/ | jq .flags
 # {"audit_silent_24h": false, "cron_silent_24h": false, "cron_failures_24h": false, "notifications_failing": false}
 ```
 
-Wire this into BetterUptime / Pingdom / Boswell daily check. The four `flags.*` booleans are the canaries:
+**Polling setup (cron-job.org, free tier):** create a job hitting the URL above every 15 min with the Bearer header, and configure failure notifications on non-200 status OR response body NOT containing `"healthy":true`. This is the alert path that would have caught the 2026-04-26 silent-cron incident — without an external poller, `flags.cron_silent_24h` flipping true is invisible. The four `flags.*` booleans are the canaries:
 
 - `audit_silent_24h` — true means no `AuditLog` rows written in 24h. **This is the canary that would have caught the 4-week silent-audit bug on day 1.** See `incidents/2026-04-25-audit-gap.md`.
 - `cron_silent_24h` — true means no `CommandRun` rows in 24h (cron isn't firing).

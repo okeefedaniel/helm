@@ -18,13 +18,26 @@ Counters that would have caught known regressions:
 - ``scheduled_failures_24h`` — non-zero means a scheduled job is
   erroring.
 """
+import hmac
 from datetime import timedelta
 
+from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.contrib.admin.views.decorators import staff_member_required
 from django.db.models import Count
 from django.http import JsonResponse
 from django.utils import timezone
+
+
+def _has_metrics_token(request) -> bool:
+    """Return True iff request carries a valid HELM_METRICS_TOKEN bearer."""
+    expected = getattr(settings, 'HELM_METRICS_TOKEN', '') or ''
+    if not expected:
+        return False
+    auth = request.META.get('HTTP_AUTHORIZATION', '')
+    if not auth.startswith('Bearer '):
+        return False
+    return hmac.compare_digest(auth[7:].strip(), expected)
 
 
 def _safe_count(model_path, **filters):
@@ -40,9 +53,24 @@ def _safe_count(model_path, **filters):
         return None
 
 
-@staff_member_required
 def metrics(request):
-    """Return JSON snapshot of operational counters."""
+    """Return JSON snapshot of operational counters.
+
+    Auth: either staff session (browser) OR ``Authorization: Bearer
+    $HELM_METRICS_TOKEN`` (external pollers like cron-job.org). Without
+    the token bypass, no external monitoring can reach this canary.
+    """
+    if not _has_metrics_token(request):
+        return _staff_only(request)
+    return _render(request)
+
+
+@staff_member_required
+def _staff_only(request):
+    return _render(request)
+
+
+def _render(request):
     now = timezone.now()
     last_24h = now - timedelta(hours=24)
     last_1h = now - timedelta(hours=1)

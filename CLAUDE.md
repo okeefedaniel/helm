@@ -48,9 +48,18 @@ The new `/api/v1/helm-feed/inbox/` endpoint each peer is expected to expose is t
 - Cache: per-user-per-path (NEVER cache by path alone — that would serve user A's payload to user B).
 - Unknown sub → 200 with empty `items[]` (so the aggregator renders cleanly), not 404.
 
-The reference implementation lives in Manifest at `signatures/helm_inbox.py`. The decorator `helm_inbox_view` will be promoted to `keel.feed.views` when peer #2 (Harbor) adopts; for now it's local to Manifest to avoid premature abstraction.
+The decorator lives in `keel.feed.views.helm_inbox_view` (since keel 0.18.0). Peers wrap a `build_inbox(request, user) -> dict` function with it.
 
-Helm's `InboxAggregator` degrades gracefully when a peer hasn't implemented the endpoint: it falls back to the aggregate `ActionItem` count from `CachedFeedSnapshot` and renders a "~N" badge with a "this product hasn't enabled per-user inbox" tooltip. So peer rollout can be incremental.
+**Wired peers (2026-04-26):**
+
+| Peer | File | Predicate |
+|---|---|---|
+| Manifest | `signatures/helm_inbox.py` | `SigningStep.signer=user, status=ACTIVE, packet.status=IN_PROGRESS` |
+| Harbor | `api/helm_inbox.py` | `ReviewAssignment.reviewer=user` (open) + `ApplicationAssignment.assigned_to=user` (open) |
+| Admiralty | `foia/helm_inbox.py` | `FOIARequest.assigned_to=user, status in {received,scope_defined,searching,under_review,package_ready}` — carries `statutory_deadline` as `due_date` |
+| Purser | `purser/helm_inbox.py` | `Submission.status in {submitted,under_review}, program.reviewers=user, (reviewed_by IS NULL OR reviewed_by=user)` |
+
+**Pending (Wave 2):** Bounty, Beacon, Lookout, Yeoman. Helm's `InboxAggregator` degrades gracefully — falls back to the aggregate `ActionItem` count from `CachedFeedSnapshot` and renders a "~N" badge with a "this product hasn't enabled per-user inbox" tooltip.
 
 ## Cron jobs
 
@@ -159,3 +168,9 @@ The plan migrated `Project.archived` boolean → `status='archived' + archived_a
 | Date | Severity | Summary | Doc |
 |---|---|---|---|
 | 2026-03-26 → 2026-04-25 | S2 | Helm Tasks audit log gap (silent compliance) | [`incidents/2026-04-25-audit-gap.md`](incidents/2026-04-25-audit-gap.md) |
+
+## Design Partner & Product Context
+
+**Dan O'Keefe is the design partner.** He is the Commissioner of Economic Development for the State of Connecticut and leads the Department of Economic and Community Development (DECD). He built the DockLabs suite to solve real problems he encounters in state government. When gstack skills reference "find a design partner" or "get user feedback," Dan is that person — he's not a hypothetical future customer, he's the builder AND the user.
+
+All product decisions should be evaluated through the lens of: "Does this solve a real problem for a state agency commissioner managing economic development, grants, FOIA, CIP, and legislative affairs?"

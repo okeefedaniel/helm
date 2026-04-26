@@ -11,7 +11,7 @@
             {% endif %}
         </h6>
         {% if helm_tasks_enabled %}
-        <a class="small text-muted text-decoration-none" href="/tasks/my_tasks/">View all</a>
+        <a class="small text-muted text-decoration-none" href="{% url 'tasks:my_tasks' %}">View all</a>
         {% endif %}
     </div>
 
@@ -26,7 +26,7 @@
             Inbox zero. No dated tasks coming up.
             {% if my_undated_task_count %}
             <div class="mt-2">
-                <a class="text-muted" href="/tasks/my_tasks/">{{ my_undated_task_count }} undated open task{{ my_undated_task_count|pluralize }}</a>
+                <a class="text-muted" href="{% url 'tasks:my_tasks' %}">{{ my_undated_task_count }} undated open task{{ my_undated_task_count|pluralize }}</a>
             </div>
             {% endif %}
         </div>
@@ -108,7 +108,7 @@
 
         {% if my_undated_task_count %}
         <div class="card-footer bg-white border-top-0 py-2 text-center">
-            <a class="small text-muted text-decoration-none" href="/tasks/my_tasks/">
+            <a class="small text-muted text-decoration-none" href="{% url 'tasks:my_tasks' %}">
                 + {{ my_undated_task_count }} undated open task{{ my_undated_task_count|pluralize }}
             </a>
         </div>

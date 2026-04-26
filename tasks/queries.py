@@ -13,7 +13,7 @@ from .models import Task
 
 def _my_open_tasks_qs(user):
     """Tasks where the user is the assignee or an active collaborator,
-    excluding DONE. The same predicate used by /tasks/my_tasks/ — kept
+    excluding DONE. The same predicate used by /tasks/ — kept
     in one place so the dashboard and the task list can never drift.
     """
     return (
@@ -35,7 +35,7 @@ def get_user_deadline_rail(user, weeks_ahead: int = 2):
     - ``this_week`` — due_date in (today, today+7d]
     - ``upcoming``  — due_date in (today+7d, today+weeks_ahead*7d]
 
-    Tasks with no due_date are omitted (they appear in /tasks/my_tasks/
+    Tasks with no due_date are omitted (they appear in /tasks/
     instead). The dashboard separately surfaces a "no due date" count
     via :func:`get_user_undated_count`.
 

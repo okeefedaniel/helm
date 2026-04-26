@@ -11,11 +11,22 @@ from .serializers import BriefingSerializer
 
 
 def _fund_source_rollup(user):
-    """ADD-6 — aggregate fund_sources across visible CIP projects.
+    """ADD-6 — aggregate fund_sources across visible CIP projects, joined
+    against Harbor's per-fund-source drawdown/payment activity.
 
-    Returns a list of dicts, one per fund source code, with project count,
-    total committed amount, and the list of contributing projects (slug +
-    name + amount).
+    Returns a list of dicts, one per fund source code, with:
+        committed_cents (Helm) — sum of CIP project fund_sources.amount_cents
+        obligated_cents (Harbor) — sum of active Award.award_amount * 100
+        drawn_cents (Harbor) — sum of paid DrawdownRequest.amount * 100
+        paid_cents (Harbor) — sum of PAYMENT Transaction.amount * 100
+        remaining_cents — committed - drawn (signed; can be negative if
+                          Harbor reports more drawn than Helm has committed)
+        project_count, projects[]
+        harbor_unavailable: True when the join couldn't read Harbor data
+
+    The join is best-effort: when Harbor's snapshot is missing or stale,
+    the Helm-only fields are still returned and `harbor_unavailable` is
+    set so the UI can disclose the gap.
     """
     # Lazy import to avoid the API app importing tasks at module load.
     try:
@@ -27,6 +38,9 @@ def _fund_source_rollup(user):
     )
     rollup = defaultdict(lambda: {
         'committed_cents': 0,
+        'obligated_cents': 0,
+        'drawn_cents': 0,
+        'paid_cents': 0,
         'project_count': 0,
         'projects': [],
     })
@@ -44,15 +58,52 @@ def _fund_source_rollup(user):
                 'name': project.name,
                 'amount_cents': amount,
             })
+
+    # Harbor join — read fund_source_breakdown from the cached snapshot.
+    harbor_breakdown, harbor_unavailable = _harbor_fund_breakdown()
+    for source, harbor in harbor_breakdown.items():
+        entry = rollup[source]
+        entry['obligated_cents'] += int(harbor.get('award_value_cents') or 0)
+        entry['drawn_cents'] += int(harbor.get('drawn_cents') or 0)
+        entry['paid_cents'] += int(harbor.get('paid_cents') or 0)
+
     out = []
     for source, data in sorted(rollup.items()):
         out.append({
             'source': source,
             'committed_cents': data['committed_cents'],
+            'obligated_cents': data['obligated_cents'],
+            'drawn_cents': data['drawn_cents'],
+            'paid_cents': data['paid_cents'],
+            'remaining_cents': data['committed_cents'] - data['drawn_cents'],
             'project_count': data['project_count'],
             'projects': data['projects'],
+            'harbor_unavailable': harbor_unavailable,
         })
     return out
+
+
+def _harbor_fund_breakdown():
+    """Return (breakdown_dict, harbor_unavailable_bool) from Harbor's snapshot.
+
+    Reads `fund_source_breakdown` out of the most recent CachedFeedSnapshot
+    for product='harbor'. Returns ({}, True) when Harbor data isn't
+    available (no snapshot, snapshot stale, or older Harbor not yet
+    emitting the new key).
+    """
+    try:
+        from dashboard.models import CachedFeedSnapshot
+        snap = CachedFeedSnapshot.objects.filter(product='harbor').first()
+    except Exception:
+        return {}, True
+    if snap is None:
+        return {}, True
+    feed = snap.feed_data or {}
+    breakdown = feed.get('fund_source_breakdown')
+    if not isinstance(breakdown, dict) or not breakdown:
+        # Harbor hasn't been redeployed with the dimension yet — degrade.
+        return {}, True
+    return breakdown, bool(getattr(snap, 'is_stale', False))
 
 
 class BriefingAPIView(APIView):

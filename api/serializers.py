@@ -43,11 +43,16 @@ class FundSourceProjectSerializer(serializers.Serializer):
 
 
 class FundSourceRollupSerializer(serializers.Serializer):
-    """ADD-6 — one row of the fund-source rollup."""
+    """ADD-6 — one row of the fund-source rollup, joined with Harbor data."""
     source = serializers.CharField()
     committed_cents = serializers.IntegerField()
+    obligated_cents = serializers.IntegerField(default=0)
+    drawn_cents = serializers.IntegerField(default=0)
+    paid_cents = serializers.IntegerField(default=0)
+    remaining_cents = serializers.IntegerField(default=0)
     project_count = serializers.IntegerField()
     projects = FundSourceProjectSerializer(many=True)
+    harbor_unavailable = serializers.BooleanField(default=False)
 
 
 class BriefingSerializer(serializers.Serializer):

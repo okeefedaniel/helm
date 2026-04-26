@@ -77,6 +77,9 @@ jobs:
           coverage report --fail-under=0 || true
 
   security:
+    permissions:
+      contents: read
+      actions: read
     uses: okeefedaniel/keel/.github/workflows/security.yml@v0.19.0
     with:
       python-version: '3.12'

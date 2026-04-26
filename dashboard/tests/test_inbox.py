@@ -87,6 +87,51 @@ class InboxAggregatorTests(TestCase):
         for p in payloads:
             self.assertTrue(p['unreachable'])
 
+    def test_timeout_retries_once_then_succeeds(self):
+        # Cold-start scenario: first request times out, second lands on a
+        # warm container and succeeds.
+        import requests as _req
+        manifest_payload = {
+            'product': 'manifest', 'product_label': 'Manifest',
+            'product_url': '', 'user_sub': 'sub-u1',
+            'items': [], 'unread_notifications': [], 'fetched_at': '',
+        }
+        manifest_calls = []
+
+        def fake_get(url, **kw):
+            if 'manifest' in url:
+                manifest_calls.append(url)
+                if len(manifest_calls) == 1:
+                    raise _req.ReadTimeout('cold start')
+                return _fake_response(200, manifest_payload)
+            return _fake_response(404)
+
+        with mock.patch('dashboard.inbox.requests.get', side_effect=fake_get):
+            agg = InboxAggregator(self.user, self.req)
+            payloads = {p['product']: p for p in agg.get_per_product()}
+
+        self.assertEqual(len(manifest_calls), 2)
+        self.assertFalse(payloads['manifest'].get('unreachable'))
+        self.assertFalse(payloads['manifest']['unfiltered'])
+
+    def test_timeout_retries_once_then_gives_up(self):
+        # Both attempts time out → fall back as unreachable, no third try.
+        import requests as _req
+        calls = {'manifest': 0}
+
+        def fake_get(url, **kw):
+            if 'manifest' in url:
+                calls['manifest'] += 1
+                raise _req.ReadTimeout('still cold')
+            return _fake_response(404)
+
+        with mock.patch('dashboard.inbox.requests.get', side_effect=fake_get):
+            agg = InboxAggregator(self.user, self.req)
+            payloads = {p['product']: p for p in agg.get_per_product()}
+
+        self.assertEqual(calls['manifest'], 2)
+        self.assertTrue(payloads['manifest']['unreachable'])
+
     def test_per_user_cache_isolation(self):
         manifest_u1 = {'product': 'manifest', 'product_label': 'Manifest',
                        'product_url': '', 'user_sub': 'sub-u1',

@@ -85,25 +85,37 @@ def _fetch_peer_inbox(product: dict, user_sub: str, api_key: str) -> dict:
     headers = {'Authorization': f'Bearer {api_key}'} if api_key else {}
     params = {'user_sub': user_sub}
     start = time.monotonic()
-    try:
-        resp = requests.get(inbox_url, headers=headers, params=params,
-                            timeout=PER_PEER_TIMEOUT)
-        duration_ms = int((time.monotonic() - start) * 1000)
-        if resp.status_code != 200:
+    # Retry once on timeout — Railway services can pay a 5-15s cold-boot
+    # cost on the first request after idle, which exceeds our 8s read
+    # deadline. A second attempt usually lands on a warmed container.
+    last_exc: Exception | None = None
+    for attempt in (1, 2):
+        try:
+            resp = requests.get(inbox_url, headers=headers, params=params,
+                                timeout=PER_PEER_TIMEOUT)
+            duration_ms = int((time.monotonic() - start) * 1000)
+            if resp.status_code != 200:
+                return {
+                    'ok': False, 'status': resp.status_code, 'data': None,
+                    'error': f'HTTP {resp.status_code}', 'duration_ms': duration_ms,
+                }
             return {
-                'ok': False, 'status': resp.status_code, 'data': None,
-                'error': f'HTTP {resp.status_code}', 'duration_ms': duration_ms,
+                'ok': True, 'status': 200, 'data': resp.json(),
+                'error': '', 'duration_ms': duration_ms,
             }
-        return {
-            'ok': True, 'status': 200, 'data': resp.json(),
-            'error': '', 'duration_ms': duration_ms,
-        }
-    except requests.RequestException as e:
-        duration_ms = int((time.monotonic() - start) * 1000)
-        return {
-            'ok': False, 'status': 0, 'data': None,
-            'error': str(e), 'duration_ms': duration_ms,
-        }
+        except requests.Timeout as e:
+            last_exc = e
+            if attempt == 1:
+                continue
+            break
+        except requests.RequestException as e:
+            last_exc = e
+            break
+    duration_ms = int((time.monotonic() - start) * 1000)
+    return {
+        'ok': False, 'status': 0, 'data': None,
+        'error': str(last_exc), 'duration_ms': duration_ms,
+    }
 
 
 def _fallback_from_snapshot(product_key: str) -> dict:

@@ -4,9 +4,9 @@
 
 Helm-specific guidance on top of the keel-wide CLAUDE.md above.
 
-## Project Management surface
+## Work Management surface
 
-The `tasks/` app implements the DockLabs Project Lifecycle Standard. URLs are gated by `HELM_TASKS_ENABLED` (env var); production deployments opt in.
+The `tasks/` app is Helm's user-facing work-management surface, implementing the DockLabs Project Lifecycle Standard (the architectural standard name in keel does not change). URLs are gated by `HELM_TASKS_ENABLED` (env var); production deployments opt in.
 
 | Surface | URL |
 |---|---|

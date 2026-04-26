@@ -121,7 +121,7 @@ def _task_collaborators_notes(context):
 # ---------------------------------------------------------------------------
 # Registration
 # ---------------------------------------------------------------------------
-HELM_PM_CATEGORY = 'Project Management'
+HELM_PM_CATEGORY = 'Work Management'
 
 
 def register_all():

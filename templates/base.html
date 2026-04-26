@@ -36,6 +36,14 @@
     <span class="sb-item-label">Dashboard</span>
   </a>
 
+  {% if helm_tasks_enabled %}
+  <a class="sb-item{% if request.resolver_match.namespace == 'tasks' %} active{% endif %}" href="{% url 'tasks:my_tasks' %}">
+    <span class="sb-toggle" style="visibility:hidden">&rsaquo;</span>
+    <span class="sb-icon"><i class="bi bi-kanban"></i></span>
+    <span class="sb-item-label">My Work</span>
+  </a>
+  {% endif %}
+
   <a class="sb-item{% if request.resolver_match.url_name == 'programs' %} active{% endif %}" href="{% url 'dashboard:programs' %}">
     <span class="sb-toggle" style="visibility:hidden">&rsaquo;</span>
     <span class="sb-icon"><i class="bi bi-collection"></i></span>
@@ -47,14 +55,6 @@
     <span class="sb-icon"><i class="bi bi-inbox"></i></span>
     <span class="sb-item-label">Inbox</span>
   </a>
-
-  {% if helm_tasks_enabled %}
-  <a class="sb-item{% if request.resolver_match.namespace == 'tasks' %} active{% endif %}" href="{% url 'tasks:my_tasks' %}">
-    <span class="sb-toggle" style="visibility:hidden">&rsaquo;</span>
-    <span class="sb-icon"><i class="bi bi-kanban"></i></span>
-    <span class="sb-item-label">Project Management</span>
-  </a>
-  {% endif %}
 </div>
 {% endblock %}
 

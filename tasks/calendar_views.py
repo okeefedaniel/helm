@@ -207,5 +207,5 @@ def calendar_ical(request):
             all_day=True,
         ))
 
-    ics = generate_ical(events, calendar_name='Helm Project Management')
+    ics = generate_ical(events, calendar_name='Helm Work Management')
     return ical_response(ics, filename='helm-pm.ics')

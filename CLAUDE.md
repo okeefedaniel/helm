@@ -50,7 +50,7 @@ The new `/api/v1/helm-feed/inbox/` endpoint each peer is expected to expose is t
 
 The decorator lives in `keel.feed.views.helm_inbox_view` (since keel 0.18.0). Peers wrap a `build_inbox(request, user) -> dict` function with it.
 
-**Wired peers (2026-04-26):**
+**Wired peers (2026-04-26 — 8/8 complete):**
 
 | Peer | File | Predicate |
 |---|---|---|
@@ -58,8 +58,12 @@ The decorator lives in `keel.feed.views.helm_inbox_view` (since keel 0.18.0). Pe
 | Harbor | `api/helm_inbox.py` | `ReviewAssignment.reviewer=user` (open) + `ApplicationAssignment.assigned_to=user` (open) |
 | Admiralty | `foia/helm_inbox.py` | `FOIARequest.assigned_to=user, status in {received,scope_defined,searching,under_review,package_ready}` — carries `statutory_deadline` as `due_date` |
 | Purser | `purser/helm_inbox.py` | `Submission.status in {submitted,under_review}, program.reviewers=user, (reviewed_by IS NULL OR reviewed_by=user)` |
+| Bounty | `api/helm_inbox.py` | `OpportunityMatch.user=user, status=NEW, relevance_score>=GRANT_MATCH_HIGH_SCORE` |
+| Beacon | `api/helm_inbox.py` | `KeepInTouch.user=user, is_active=True, next_reminder_date<=today+3d` + `Company.relationship_owner=user, approval_status=pending` |
+| Lookout | `api/helm_inbox.py` | `TrackedBill.tracked_by=user, status in {researching,collaborating,drafting_testimony}, archived_at IS NULL` |
+| Yeoman | `yeoman/helm_inbox.py` | `Invitation.(assigned_to OR principal OR delegated_to)=user, status in {received,in_review,accepted}` |
 
-**Pending (Wave 2):** Bounty, Beacon, Lookout, Yeoman. Helm's `InboxAggregator` degrades gracefully — falls back to the aggregate `ActionItem` count from `CachedFeedSnapshot` and renders a "~N" badge with a "this product hasn't enabled per-user inbox" tooltip.
+The graceful-fallback path in `InboxAggregator` (aggregate `ActionItem` count + "~N" badge) remains the safety net for any peer that ever drops the endpoint.
 
 ## Cron jobs
 

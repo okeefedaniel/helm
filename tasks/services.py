@@ -252,8 +252,16 @@ def promote_fleet_item_to_task(
                 update_fields.append('foia_received_at')
             except (TypeError, ValueError):
                 pass
-        if not project.foia_jurisdiction:
-            project.foia_jurisdiction = Project.FOIAJurisdiction.FEDERAL
+        # Jurisdiction: prefer explicit fleet_item value (Admiralty knows
+        # which statute applies), then existing project value, then CT
+        # default (DECD posture — most requests are CT, not federal).
+        feed_jurisdiction = (fleet_item or {}).get('jurisdiction')
+        valid = {c[0] for c in Project.FOIAJurisdiction.choices}
+        if feed_jurisdiction in valid:
+            project.foia_jurisdiction = feed_jurisdiction
+            update_fields.append('foia_jurisdiction')
+        elif not project.foia_jurisdiction:
+            project.foia_jurisdiction = Project.FOIAJurisdiction.CONNECTICUT
             update_fields.append('foia_jurisdiction')
         project.save(update_fields=update_fields)
         # Compute the deadline if we have a received_at.

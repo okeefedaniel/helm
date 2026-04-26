@@ -64,27 +64,51 @@ PROJECTS = [
     },
     {
         'slug': 'arpa-spring-rfp-foia',
-        'name': 'ARPA Spring RFP FOIA',
+        'name': 'ARPA Spring RFP FOIA (CT FOIA)',
         'kind': Project.Kind.FOIA,
         'color': 'orange',
-        'description': 'Records request from Hartford Courant — ARPA spring RFP responses.',
+        'description': 'Records request from Hartford Courant — ARPA spring RFP responses. CT FOIA: 4 BD acknowledgment.',
         'target_status': Project.Status.ACTIVE,
         'foia_metadata': {
             'foia_request_id': 'FOIA-2026-0421',
-            'foia_agency': 'State Comptroller',
+            'foia_agency': 'CT DECD',
             'requester_organization': 'Hartford Courant',
             'requester_name': 'Jane Doe',
         },
         # ADD-2 — populate the statutory clock so the demo countdown badge
-        # is meaningful. Received 7 calendar days ago; deadline computed
-        # by recompute_deadline().
-        'foia_received_offset_days': -7,
+        # is meaningful. Received 2 calendar days ago; CT clock = 4 BD so
+        # the badge lands in 'urgent' or 'warning' tier on the demo screen.
+        'foia_received_offset_days': -2,
+        'foia_jurisdiction': Project.FOIAJurisdiction.CONNECTICUT,
         'tasks': [
-            ('Search responsive records', Task.Priority.HIGH, Task.Status.IN_PROGRESS, 4),
+            ('Acknowledge receipt within 4 BD (CGS §1-206(b)(1))', Task.Priority.URGENT, Task.Status.IN_PROGRESS, 2),
+            ('Search responsive records', Task.Priority.HIGH, Task.Status.TODO, 5),
             ('Review for exemptions (CGS §1-210(b))', Task.Priority.HIGH, Task.Status.TODO, 8),
             ('Redact and prepare release packet', Task.Priority.MEDIUM, Task.Status.TODO, 14),
         ],
-        'notes': ['Counsel reviewing scope. Statutory deadline auto-computed from received_at.'],
+        'notes': ['Counsel reviewing scope. CT statutory deadline auto-computed from received_at.'],
+    },
+    {
+        'slug': 'federal-doe-records-foia',
+        'name': 'DOE Records Request (Federal FOIA)',
+        'kind': Project.Kind.FOIA,
+        'color': 'purple',
+        'description': 'FOIA request received via federal channel — 20 BD substantive deadline.',
+        'target_status': Project.Status.ACTIVE,
+        'foia_metadata': {
+            'foia_request_id': 'FOIA-2026-FED-0099',
+            'foia_agency': 'Department of Energy',
+            'requester_organization': 'Independent researcher',
+            'requester_name': 'A. Researcher',
+        },
+        'foia_received_offset_days': -5,
+        'foia_jurisdiction': Project.FOIAJurisdiction.FEDERAL,
+        'tasks': [
+            ('Acknowledge receipt within 5 business days', Task.Priority.HIGH, Task.Status.DONE, -3),
+            ('Search responsive records', Task.Priority.HIGH, Task.Status.IN_PROGRESS, 8),
+            ('Release / withhold by statutory deadline', Task.Priority.URGENT, Task.Status.TODO, 15),
+        ],
+        'notes': ['Federal jurisdiction — 20 BD clock contrasts with the CT FOIA project for demo.'],
     },
     {
         'slug': 'capital-improvement-2025',
@@ -233,7 +257,9 @@ class Command(BaseCommand):
             project.foia_received_at = today + timedelta(
                 days=spec['foia_received_offset_days'],
             )
-            project.foia_jurisdiction = Project.FOIAJurisdiction.FEDERAL
+            project.foia_jurisdiction = (
+                spec.get('foia_jurisdiction') or Project.FOIAJurisdiction.CONNECTICUT
+            )
             project.save(update_fields=['foia_received_at', 'foia_jurisdiction'])
             recompute_deadline(project)
 

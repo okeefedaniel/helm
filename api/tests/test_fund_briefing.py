@@ -104,3 +104,42 @@ class FundSourceBriefingTests(TestCase):
         arpa_projects = rollup['arpa']['projects']
         self.assertEqual(len(arpa_projects), 1)
         self.assertEqual(arpa_projects[0]['slug'], self.arpa.slug)
+
+    def test_rollup_marks_harbor_unavailable_when_snapshot_missing(self):
+        # No Harbor CachedFeedSnapshot in the test DB → harbor_unavailable=True.
+        r = self.client.get(reverse('api:briefing') + '?include=fund_sources')
+        rollup = {row['source']: row for row in r.json()['fund_sources']}
+        self.assertTrue(rollup['arpa']['harbor_unavailable'])
+        # Helm-only fields still populated correctly.
+        self.assertEqual(rollup['arpa']['committed_cents'], 240000000)
+        self.assertEqual(rollup['arpa']['drawn_cents'], 0)
+        self.assertEqual(rollup['arpa']['remaining_cents'], 240000000)
+
+    def test_rollup_joins_harbor_drawdown_when_snapshot_present(self):
+        # Seed Harbor's snapshot with fund_source_breakdown for ARPA.
+        from django.utils import timezone
+        from dashboard.models import CachedFeedSnapshot
+        CachedFeedSnapshot.objects.create(
+            product='harbor',
+            feed_data={
+                'fund_source_breakdown': {
+                    'arpa': {
+                        'award_count': 1,
+                        'award_value_cents': 200000000,  # $2M obligated
+                        'drawn_cents': 80000000,         # $800k drawn
+                        'paid_cents': 75000000,
+                        'refunded_cents': 0,
+                    },
+                },
+            },
+            fetched_at=timezone.now(),
+            is_stale=False,
+            consecutive_failures=0,
+        )
+        r = self.client.get(reverse('api:briefing') + '?include=fund_sources')
+        rollup = {row['source']: row for row in r.json()['fund_sources']}
+        self.assertFalse(rollup['arpa']['harbor_unavailable'])
+        self.assertEqual(rollup['arpa']['obligated_cents'], 200000000)
+        self.assertEqual(rollup['arpa']['drawn_cents'], 80000000)
+        # remaining = Helm-committed ($2.4M) minus Harbor-drawn ($800k) = $1.6M
+        self.assertEqual(rollup['arpa']['remaining_cents'], 240000000 - 80000000)

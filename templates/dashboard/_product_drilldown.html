@@ -1,0 +1,96 @@
+{% load humanize helm_tags %}
+
+{# Per-product drill-down panel — htmx-loaded into #product-drilldown when
+   a metric card on tab 2 is clicked. Shows the full feed payload for one
+   peer: metrics, sparklines, action items, alerts, freshness. #}
+<div class="card border-0 shadow-sm">
+    <div class="card-header bg-white border-bottom py-2 d-flex justify-content-between align-items-center">
+        <h6 class="mb-0 small">
+            <i class="{{ product_meta.icon }} me-1"></i>
+            <a href="{{ product_meta.url }}" target="_blank" rel="noopener" class="text-decoration-none">
+                {{ product_meta.label }}
+            </a>
+            <span class="text-muted ms-2" style="font-size:.7rem;">{{ product_meta.tagline }}</span>
+        </h6>
+        <div class="d-flex align-items-center gap-2">
+            {% if is_stale %}
+            <span class="pill pill-muted" style="font-size:.6rem;" title="Cached snapshot is stale">
+                <i class="bi bi-cloud-slash"></i> stale
+            </span>
+            {% endif %}
+            {% if fetched_at %}
+            <span class="text-muted" style="font-size:.65rem;">
+                Updated {{ fetched_at|naturaltime }}
+            </span>
+            {% endif %}
+            <button type="button" class="btn btn-sm btn-link text-muted p-0" title="Close"
+                    onclick="document.getElementById('product-drilldown').innerHTML = '';">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+    </div>
+
+    <div class="card-body">
+        {% if card.metrics %}
+        <div class="row g-2 mb-3">
+            {% for m in card.metrics %}
+            <div class="col-md-3 col-sm-6">
+                <div class="border rounded p-2 h-100">
+                    <div class="text-muted text-uppercase fw-semibold" style="font-size:.6rem; letter-spacing:.05em;">{{ m.label }}</div>
+                    <div class="h5 mb-0">
+                        {% if m.unit == 'USD' %}${{ m.value|floatformat:0|intcomma }}
+                        {% else %}{{ m.value|intcomma }}{% if m.unit %} <small class="text-muted">{{ m.unit }}</small>{% endif %}
+                        {% endif %}
+                    </div>
+                    {% if m.trend %}
+                    <div class="text-muted small">
+                        {% if m.trend == 'up' %}<i class="bi bi-arrow-up text-success"></i>
+                        {% elif m.trend == 'down' %}<i class="bi bi-arrow-down text-danger"></i>
+                        {% else %}<i class="bi bi-arrow-right"></i>{% endif %}
+                        {{ m.trend_value|default:"" }}{% if m.trend_period %} {{ m.trend_period }}{% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        {% if action_items %}
+        <h6 class="small text-muted mt-3 mb-2"><i class="bi bi-list-check me-1"></i>Action items ({{ action_items|length }})</h6>
+        <div class="list-group list-group-flush">
+            {% for item in action_items|slice:":10" %}
+            <a href="{{ item.deep_link }}" target="_blank" rel="noopener"
+               class="list-group-item list-group-item-action py-2 px-2{% if item.priority == 'critical' %} list-group-item-danger{% elif item.priority == 'high' %} list-group-item-warning{% endif %}">
+                <div class="d-flex justify-content-between">
+                    <span class="small fw-semibold text-truncate">{{ item.title }}</span>
+                    <span class="pill bg-{{ item.priority|priority_class }}" style="font-size:.6rem;">{{ item.type|title }}</span>
+                </div>
+                {% if item.description %}
+                <div class="text-muted" style="font-size:.7rem;">{{ item.description|truncatewords:14 }}</div>
+                {% endif %}
+            </a>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        {% if alerts %}
+        <h6 class="small text-muted mt-3 mb-2"><i class="bi bi-exclamation-triangle me-1"></i>Alerts ({{ alerts|length }})</h6>
+        <div class="list-group list-group-flush">
+            {% for a in alerts|slice:":10" %}
+            <a href="{{ a.deep_link }}" target="_blank" rel="noopener"
+               class="list-group-item list-group-item-action py-2 px-2 small">
+                {{ a.title }}
+                <span class="text-muted ms-2" style="font-size:.65rem;">{{ a.severity|title }}</span>
+            </a>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        {% if not card.metrics and not action_items and not alerts %}
+        <div class="text-center text-muted small py-3">
+            No data cached for {{ product_meta.label }}.
+        </div>
+        {% endif %}
+    </div>
+</div>

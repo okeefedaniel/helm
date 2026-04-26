@@ -1,0 +1,118 @@
+{% load humanize %}
+
+{# Column 1: My Work — deadline rail grouped by Today / This week / Overdue.
+   Tasks the user assigns or collaborates on; click-through to detail. #}
+<div class="card border-0 shadow-sm h-100">
+    <div class="card-header bg-white border-bottom py-2 d-flex justify-content-between align-items-center">
+        <h6 class="mb-0 small">
+            <i class="bi bi-check2-square text-success me-1"></i>My Work
+            {% if my_open_task_count %}
+            <span class="pill pill-muted ms-1" style="font-size:.65rem;">{{ my_open_task_count }}</span>
+            {% endif %}
+        </h6>
+        {% if helm_tasks_enabled %}
+        <a class="small text-muted text-decoration-none" href="/tasks/my_tasks/">View all</a>
+        {% endif %}
+    </div>
+
+    <div class="card-body p-0">
+        {% if not helm_tasks_enabled %}
+        <div class="text-center text-muted small py-4">
+            Tasks not enabled on this deployment.
+        </div>
+        {% elif not deadline_rail.overdue and not deadline_rail.today and not deadline_rail.this_week and not deadline_rail.upcoming %}
+        <div class="text-center text-muted small py-4">
+            <i class="bi bi-cup-hot d-block mb-2" style="font-size:1.5rem;"></i>
+            Inbox zero. No dated tasks coming up.
+            {% if my_undated_task_count %}
+            <div class="mt-2">
+                <a class="text-muted" href="/tasks/my_tasks/">{{ my_undated_task_count }} undated open task{{ my_undated_task_count|pluralize }}</a>
+            </div>
+            {% endif %}
+        </div>
+        {% else %}
+        {% if deadline_rail.overdue %}
+        <div class="px-3 pt-3 pb-1">
+            <div class="text-uppercase text-danger fw-semibold mb-1" style="font-size:.65rem; letter-spacing:.05em;">
+                <i class="bi bi-exclamation-triangle me-1"></i>Overdue ({{ deadline_rail.overdue|length }})
+            </div>
+        </div>
+        <div class="list-group list-group-flush">
+            {% for task in deadline_rail.overdue %}
+            <a href="{{ task.get_absolute_url }}" class="list-group-item list-group-item-action py-2 px-3 list-group-item-danger">
+                <div class="fw-semibold small text-truncate">{{ task.title }}</div>
+                <div class="text-muted" style="font-size:.7rem;">
+                    <i class="bi bi-folder me-1"></i>{{ task.project.name|truncatechars:30 }}
+                    &middot; due {{ task.due_date|naturalday }}
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        {% if deadline_rail.today %}
+        <div class="px-3 pt-3 pb-1">
+            <div class="text-uppercase text-primary fw-semibold mb-1" style="font-size:.65rem; letter-spacing:.05em;">
+                Today ({{ deadline_rail.today|length }})
+            </div>
+        </div>
+        <div class="list-group list-group-flush">
+            {% for task in deadline_rail.today %}
+            <a href="{{ task.get_absolute_url }}" class="list-group-item list-group-item-action py-2 px-3">
+                <div class="fw-semibold small text-truncate">{{ task.title }}</div>
+                <div class="text-muted" style="font-size:.7rem;">
+                    <i class="bi bi-folder me-1"></i>{{ task.project.name|truncatechars:30 }}
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        {% if deadline_rail.this_week %}
+        <div class="px-3 pt-3 pb-1">
+            <div class="text-uppercase text-muted fw-semibold mb-1" style="font-size:.65rem; letter-spacing:.05em;">
+                This week ({{ deadline_rail.this_week|length }})
+            </div>
+        </div>
+        <div class="list-group list-group-flush">
+            {% for task in deadline_rail.this_week %}
+            <a href="{{ task.get_absolute_url }}" class="list-group-item list-group-item-action py-2 px-3">
+                <div class="fw-semibold small text-truncate">{{ task.title }}</div>
+                <div class="text-muted" style="font-size:.7rem;">
+                    <i class="bi bi-folder me-1"></i>{{ task.project.name|truncatechars:30 }}
+                    &middot; {{ task.due_date|naturalday }}
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        {% if deadline_rail.upcoming %}
+        <div class="px-3 pt-3 pb-1">
+            <div class="text-uppercase text-muted fw-semibold mb-1" style="font-size:.65rem; letter-spacing:.05em;">
+                Upcoming ({{ deadline_rail.upcoming|length }})
+            </div>
+        </div>
+        <div class="list-group list-group-flush">
+            {% for task in deadline_rail.upcoming %}
+            <a href="{{ task.get_absolute_url }}" class="list-group-item list-group-item-action py-2 px-3">
+                <div class="fw-semibold small text-truncate">{{ task.title }}</div>
+                <div class="text-muted" style="font-size:.7rem;">
+                    <i class="bi bi-folder me-1"></i>{{ task.project.name|truncatechars:30 }}
+                    &middot; {{ task.due_date|naturalday }}
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        {% if my_undated_task_count %}
+        <div class="card-footer bg-white border-top-0 py-2 text-center">
+            <a class="small text-muted text-decoration-none" href="/tasks/my_tasks/">
+                + {{ my_undated_task_count }} undated open task{{ my_undated_task_count|pluralize }}
+            </a>
+        </div>
+        {% endif %}
+        {% endif %}
+    </div>
+</div>

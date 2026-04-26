@@ -86,3 +86,64 @@ class ProductFeed:
             alerts=alerts,
             sparklines=sparklines,
         )
+
+
+# Per-user inbox contract: items where the requesting user is the gating
+# dependency in a peer product. Returned by /api/v1/helm-feed/inbox/.
+# Locked 2026-04-26; do not modify shape after pilot ships.
+
+INBOX_ITEM_TYPES = ('signature', 'approval', 'review', 'response', 'assignment')
+INBOX_PRIORITIES = ('low', 'normal', 'high', 'urgent')
+
+
+@dataclass
+class InboxItem:
+    """One ball-in-this-user's-court item from a peer product."""
+    id: str                         # peer-local stable id
+    type: str                       # one of INBOX_ITEM_TYPES
+    title: str                      # human-readable, e.g. "Sign award packet for City of Toledo"
+    deep_link: str                  # absolute URL into the peer
+    waiting_since: str = ''         # ISO8601 — when ball landed in this user's court
+    due_date: str | None = None     # ISO8601 date, or None
+    priority: str = 'normal'        # one of INBOX_PRIORITIES
+
+
+@dataclass
+class UnreadNotification:
+    """One unread keel.notifications row from a peer product."""
+    id: str
+    title: str
+    body: str = ''
+    deep_link: str = ''
+    created_at: str = ''            # ISO8601
+    priority: str = 'normal'        # one of INBOX_PRIORITIES
+
+
+@dataclass
+class UserInbox:
+    """Response shape of /api/v1/helm-feed/inbox/?user_sub=<sub>."""
+    product: str
+    product_label: str
+    product_url: str
+    user_sub: str                   # OIDC sub of the requesting user
+    items: list[InboxItem] = field(default_factory=list)
+    unread_notifications: list[UnreadNotification] = field(default_factory=list)
+    fetched_at: str = ''            # ISO8601
+
+    def to_dict(self) -> dict:
+        from dataclasses import asdict
+        return asdict(self)
+
+    @classmethod
+    def from_dict(cls, data: dict) -> 'UserInbox':
+        items = [InboxItem(**i) for i in data.get('items', [])]
+        notes = [UnreadNotification(**n) for n in data.get('unread_notifications', [])]
+        return cls(
+            product=data['product'],
+            product_label=data['product_label'],
+            product_url=data['product_url'],
+            user_sub=data['user_sub'],
+            items=items,
+            unread_notifications=notes,
+            fetched_at=data.get('fetched_at', ''),
+        )

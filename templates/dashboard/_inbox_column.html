@@ -1,0 +1,86 @@
+{# Column 2: Awaiting Me — items where the user is the gating dependency
+   in any peer product (signing requests, approvals, reviews, FOIA responses).
+   Per-peer payload is grouped under a product header. Peers without an
+   inbox endpoint show an aggregate count (unfiltered fallback). #}
+<div class="card border-0 shadow-sm h-100">
+    <div class="card-header bg-white border-bottom py-2 d-flex justify-content-between align-items-center">
+        <h6 class="mb-0 small">
+            <i class="bi bi-inboxes text-primary me-1"></i>Awaiting Me
+            {% if inbox_total_count %}
+            <span class="pill pill-muted ms-1" style="font-size:.65rem;">{{ inbox_total_count }}</span>
+            {% endif %}
+        </h6>
+        {% if not inbox_user_sub %}
+        <span class="text-muted small" title="OIDC sub not yet present in session — peer inboxes cannot be filtered to you.">
+            <i class="bi bi-info-circle"></i>
+        </span>
+        {% endif %}
+    </div>
+
+    <div class="card-body p-0">
+        {% if inbox_total_count == 0 and not inbox_per_product %}
+        <div class="text-center text-muted small py-4">
+            No fleet products configured.
+        </div>
+        {% else %}
+        <div class="list-group list-group-flush">
+        {% for payload in inbox_per_product %}
+            <div class="list-group-item py-2 px-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div class="small fw-semibold">
+                        <i class="{{ payload.product_icon|default:'bi-app' }} text-muted me-1"></i>
+                        <a href="{{ payload.product_url }}" target="_blank" rel="noopener" class="text-decoration-none">
+                            {{ payload.product_label }}
+                        </a>
+                    </div>
+                    <div class="d-flex align-items-center gap-1">
+                        {% if payload.unreachable %}
+                        <span class="pill pill-muted" style="font-size:.6rem;" title="{{ payload.fallback_reason }}">
+                            <i class="bi bi-cloud-slash"></i> stale
+                        </span>
+                        {% elif payload.unfiltered %}
+                        <span class="pill pill-muted" style="font-size:.6rem;"
+                              title="This product hasn't yet enabled per-user inbox; showing aggregate count.">
+                            ~{{ payload.aggregate_count|default:0 }}
+                        </span>
+                        {% else %}
+                        <span class="pill {% if payload.item_count %}bg-primary text-white{% else %}pill-muted{% endif %}"
+                              style="font-size:.6rem;">
+                            {{ payload.item_count }}
+                        </span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                {% if payload.items %}
+                <div class="mt-1">
+                    {% for item in payload.items|slice:":5" %}
+                    <a href="{{ item.deep_link }}" target="_blank" rel="noopener"
+                       class="d-block text-decoration-none small text-body py-1 border-bottom border-light">
+                        <span class="text-truncate d-inline-block" style="max-width: 100%;">
+                            {% if item.priority == 'urgent' %}<i class="bi bi-fire text-danger me-1"></i>
+                            {% elif item.priority == 'high' %}<i class="bi bi-exclamation-circle text-warning me-1"></i>
+                            {% endif %}
+                            {{ item.title }}
+                        </span>
+                    </a>
+                    {% endfor %}
+                    {% if payload.items|length > 5 %}
+                    <a href="{{ payload.product_url }}" class="small text-muted text-decoration-none" target="_blank" rel="noopener">
+                        + {{ payload.items|length|add:"-5" }} more in {{ payload.product_label }}
+                    </a>
+                    {% endif %}
+                </div>
+                {% elif payload.unfiltered and payload.aggregate_count %}
+                <div class="mt-1 small text-muted">
+                    <a href="{{ payload.product_url }}" target="_blank" rel="noopener" class="text-decoration-none text-muted">
+                        Open in {{ payload.product_label }} <i class="bi bi-box-arrow-up-right"></i>
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+</div>

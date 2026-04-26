@@ -10,6 +10,10 @@ The `tasks/` app implements the DockLabs Project Lifecycle Standard. URLs are ga
 
 | Surface | URL |
 |---|---|
+| Dashboard — Today tab (personal inbox) | `/dashboard/` (default) or `/dashboard/?tab=today` |
+| Dashboard — Across the suite tab | `/dashboard/?tab=suite` |
+| Per-product drill-down (htmx panel) | `/dashboard/across/<product>/` |
+| Dashboard partials (htmx) | `/dashboard/partials/{deadline-rail,inbox-column,alerts-column,action-queue,alerts,metrics,card/<product>}/` |
 | Project list | `/tasks/projects/` |
 | Project detail | `/tasks/projects/<slug>/` |
 | Project collaborators / notes / attachments | `/tasks/projects/<slug>/{collaborators,notes,attachments}/` |
@@ -20,6 +24,33 @@ The `tasks/` app implements the DockLabs Project Lifecycle Standard. URLs are ga
 | PDF export per project | `/tasks/projects/<slug>/export.pdf` |
 | Notification preferences | `/notifications/preferences/` (keel-shipped) |
 | Scheduled jobs dashboard | `/scheduling/` (keel-shipped) |
+
+## Dashboard architecture
+
+`/dashboard/` is split into two tabs.
+
+**Tab 1 — "Today" (personal inbox).** Three columns:
+
+1. **My Work** — deadline rail of the user's open tasks grouped Overdue / Today / This week / Upcoming. Source: `tasks.queries.get_user_deadline_rail()`. Reuses the same `Q(assignee=user) | Q(collaborators__user=user)` predicate as `/tasks/my_tasks/` so the two surfaces never drift.
+2. **Awaiting Me** — cross-suite inbox. For each peer in `FLEET_PRODUCTS`, calls `/api/v1/helm-feed/inbox/?user_sub=<oidc_sub>` and groups items by product. Source: `dashboard.inbox.InboxAggregator`. Per-user-per-peer cache (60s TTL), parallel fetch (8 workers max), graceful fallback to the cached aggregate `ActionItem` count when a peer's inbox endpoint isn't yet implemented.
+3. **Alerts** — helm-local `Notification` rows + aggregated `unread_notifications` from peers' inbox payloads + (staff-only) ops canaries from `/api/v1/metrics/`.
+
+**Tab 2 — "Across the suite" (situational awareness).** The original aggregate dashboard: period bar, fleet metric grid with sparklines, fleet-aggregate action queue, fleet-aggregate alerts, watch list. Each metric card has an expand button that loads `/dashboard/across/<product>/` into a drill-down panel via htmx.
+
+The active tab is controlled by the `?tab=today|suite` query string (server-rendered) and Bootstrap nav-tabs (client-side switching). Tab clicks `history.replaceState()` so reloads land on the same tab.
+
+### Per-user inbox feed contract
+
+The new `/api/v1/helm-feed/inbox/` endpoint each peer is expected to expose is the per-user companion to the existing aggregate `/api/v1/helm-feed/`. Returns "items where this user is the gating dependency" + that user's unread notifications, in the shape defined by `dashboard.feed_contract.UserInbox`.
+
+- Auth: `Authorization: Bearer $HELM_FEED_API_KEY` (mirrors aggregate endpoint).
+- Required query param: `?user_sub=<oidc_sub>` — resolved against `SocialAccount(provider='keel', uid=sub)` on the peer side.
+- Cache: per-user-per-path (NEVER cache by path alone — that would serve user A's payload to user B).
+- Unknown sub → 200 with empty `items[]` (so the aggregator renders cleanly), not 404.
+
+The reference implementation lives in Manifest at `signatures/helm_inbox.py`. The decorator `helm_inbox_view` will be promoted to `keel.feed.views` when peer #2 (Harbor) adopts; for now it's local to Manifest to avoid premature abstraction.
+
+Helm's `InboxAggregator` degrades gracefully when a peer hasn't implemented the endpoint: it falls back to the aggregate `ActionItem` count from `CachedFeedSnapshot` and renders a "~N" badge with a "this product hasn't enabled per-user inbox" tooltip. So peer rollout can be incremental.
 
 ## Cron jobs
 

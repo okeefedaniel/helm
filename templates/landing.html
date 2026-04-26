@@ -37,6 +37,9 @@ need a single view of agency operations.
               <i class="bi {{ product.icon|default:'bi-app' }}"></i>
             </div>
             <h5 class="mb-1">{{ product.label|default:product.name }}</h5>
+            {% if product.tagline %}
+            <p class="text-muted small mb-0">{{ product.tagline }}</p>
+            {% endif %}
           </div>
         </a>
       </div>

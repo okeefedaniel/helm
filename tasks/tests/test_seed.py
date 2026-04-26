@@ -31,13 +31,14 @@ class SeedDemoProjectsTests(TestCase):
             username='analyst', email='analyst@docklabs.ai',
         )
 
-    def test_seed_creates_six_projects(self):
+    def test_seed_creates_seven_projects(self):
         call_command('seed_demo_projects')
-        self.assertEqual(Project.objects.count(), 6)
+        self.assertEqual(Project.objects.count(), 7)
         slugs = set(Project.objects.values_list('slug', flat=True))
         self.assertEqual(slugs, {
             'q3-grant-portfolio',
             'arpa-spring-rfp-foia',
+            'federal-doe-records-foia',
             'capital-improvement-2025',
             'arpa-broadband-rollout',
             'iija-bridge-replacement',
@@ -87,7 +88,8 @@ class SeedDemoProjectsTests(TestCase):
         call_command('seed_demo_projects')
         counts = {p.slug: p.tasks.count() for p in Project.objects.all()}
         self.assertEqual(counts['q3-grant-portfolio'], 4)
-        self.assertEqual(counts['arpa-spring-rfp-foia'], 3)
+        self.assertEqual(counts['arpa-spring-rfp-foia'], 4)
+        self.assertEqual(counts['federal-doe-records-foia'], 3)
         self.assertEqual(counts['capital-improvement-2025'], 2)
         self.assertEqual(counts['archived-pilot-2024'], 1)
 
@@ -123,7 +125,7 @@ class SeedDemoProjectsSafetyTests(TestCase):
             is_superuser=True, is_staff=True,
         )
         call_command('seed_demo_projects', '--force')
-        self.assertEqual(Project.objects.count(), 6)
+        self.assertEqual(Project.objects.count(), 7)
 
 
 @override_settings(HELM_TASKS_ENABLED=False)

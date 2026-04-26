@@ -198,10 +198,39 @@ _FEDERAL_HOLIDAYS = {
     date(2027, 12, 24),  # Christmas observed (Dec 25 = Sat)
 }
 
+# Connecticut state holidays per CGS §1-4. Superset of federal: adds
+# Lincoln's Birthday (Feb 12) and Good Friday. Used for CT FOIA business-day
+# math so a Lincoln's Birthday filing doesn't get counted as a business day.
+_CONNECTICUT_HOLIDAYS = _FEDERAL_HOLIDAYS | {
+    # 2026
+    date(2026, 2, 12),   # Lincoln's Birthday (Thu)
+    date(2026, 4, 3),    # Good Friday (Easter = Apr 5)
+    # 2027
+    date(2027, 2, 12),   # Lincoln's Birthday (Fri)
+    date(2027, 3, 26),   # Good Friday (Easter = Mar 28)
+}
+
 
 _BUSINESS_DAYS_PER_JURISDICTION = {
+    # Federal FOIA: 5 USC 552(a)(6)(A)(i) — 20 BD substantive response.
     'federal': 20,
+    # CT FOIA: CGS §1-206(b)(1) — 4 BD acknowledgment. Substantive deadline
+    # is "promptly" (no fixed clock), so we model only the acknowledgment
+    # window. A future enhancement could add a separate "substantive" tier.
+    'connecticut': 4,
 }
+
+# Per-jurisdiction holiday tables. Lookups fall back to federal for
+# unknown jurisdictions.
+_HOLIDAYS_PER_JURISDICTION = {
+    'federal': _FEDERAL_HOLIDAYS,
+    'connecticut': _CONNECTICUT_HOLIDAYS,
+}
+
+
+def holidays_for(jurisdiction: str | None) -> set[date]:
+    """Return the holiday set for a jurisdiction, defaulting to federal."""
+    return _HOLIDAYS_PER_JURISDICTION.get(jurisdiction or 'federal', _FEDERAL_HOLIDAYS)
 
 
 def is_business_day(d: date, holidays: set[date] = _FEDERAL_HOLIDAYS) -> bool:
@@ -263,7 +292,8 @@ def compute_statutory_deadline(
             'Unknown FOIA jurisdiction %r; defaulting to federal 20BD', jurisdiction,
         )
         bdays = 20
-    return add_business_days(received_at, bdays + tolled_days)
+        jurisdiction = 'federal'
+    return add_business_days(received_at, bdays + tolled_days, holidays_for(jurisdiction))
 
 
 def days_remaining(
@@ -278,7 +308,10 @@ def days_remaining(
     if not project.foia_statutory_deadline_at:
         return None
     today = today or date.today()
-    return business_days_between(today, project.foia_statutory_deadline_at)
+    return business_days_between(
+        today, project.foia_statutory_deadline_at,
+        holidays_for(project.foia_jurisdiction),
+    )
 
 
 def urgency_tier(project, today: Optional[date] = None) -> str:
@@ -317,17 +350,19 @@ def recompute_deadline(project) -> Optional[date]:
     """
     if project.kind != project.Kind.FOIA or not project.foia_received_at:
         return None
+    jurisdiction = project.foia_jurisdiction or 'connecticut'
+    holidays = holidays_for(jurisdiction)
     tolled_days = 0
     if project.foia_tolled_at and project.foia_tolled_until:
         tolled_days = business_days_between(
-            project.foia_tolled_at, project.foia_tolled_until,
+            project.foia_tolled_at, project.foia_tolled_until, holidays,
         )
         # Endpoints are exclusive; add 1 to include the tolled span.
         if tolled_days > 0:
             tolled_days += 1
     deadline = compute_statutory_deadline(
         project.foia_received_at,
-        jurisdiction=project.foia_jurisdiction or 'federal',
+        jurisdiction=jurisdiction,
         tolled_days=tolled_days,
     )
     project.foia_statutory_deadline_at = deadline

@@ -44,6 +44,21 @@ class BusinessDayMathTests(TestCase):
         # 2026-05-25 is Memorial Day.
         self.assertFalse(is_business_day(date(2026, 5, 25)))
 
+    def test_ct_holiday_is_not_business_day_with_ct_holidays(self):
+        # Lincoln's Birthday (Feb 12, 2026 = Thursday) is a CT state holiday
+        # but NOT a federal holiday. Verify the jurisdiction-aware lookup.
+        from tasks.foia import holidays_for
+        ct = holidays_for('connecticut')
+        fed = holidays_for('federal')
+        self.assertFalse(is_business_day(date(2026, 2, 12), ct))
+        self.assertTrue(is_business_day(date(2026, 2, 12), fed))
+
+    def test_ct_good_friday_is_not_business_day(self):
+        # Good Friday 2026 = Apr 3 (Easter = Apr 5). CT-only holiday.
+        from tasks.foia import holidays_for
+        ct = holidays_for('connecticut')
+        self.assertFalse(is_business_day(date(2026, 4, 3), ct))
+
     def test_add_business_days_skips_weekend(self):
         # Friday + 1 BD = following Monday.
         result = add_business_days(date(2026, 4, 24), 1)  # Fri
@@ -90,6 +105,23 @@ class StatutoryDeadlineTests(TestCase):
         tolled = compute_statutory_deadline(date(2026, 4, 1), tolled_days=5)
         # 5 business days later than the base.
         self.assertEqual(business_days_between(base, tolled), 4)
+
+    def test_connecticut_deadline_is_4_business_days(self):
+        # 2026-04-20 (Mon) + 4 BD, no CT holidays in window = 2026-04-24 (Fri).
+        deadline = compute_statutory_deadline(date(2026, 4, 20), jurisdiction='connecticut')
+        self.assertEqual(deadline, date(2026, 4, 24))
+
+    def test_connecticut_deadline_skips_lincolns_birthday(self):
+        # Received Mon 2026-02-09. CT holidays in window: Lincoln (Thu Feb 12),
+        # Presidents Day (Mon Feb 16). 4 BD = Feb 10, 11, 13, 17 → deadline 2026-02-17.
+        deadline = compute_statutory_deadline(date(2026, 2, 9), jurisdiction='connecticut')
+        self.assertEqual(deadline, date(2026, 2, 17))
+
+    def test_connecticut_deadline_skips_good_friday(self):
+        # Received Mon 2026-03-30. Good Friday = Apr 3 (Fri). 4 BD = Mar 31,
+        # Apr 1, 2, then skip Fri Apr 3 → Mon Apr 6. Deadline = 2026-04-06.
+        deadline = compute_statutory_deadline(date(2026, 3, 30), jurisdiction='connecticut')
+        self.assertEqual(deadline, date(2026, 4, 6))
 
 
 # ---------------------------------------------------------------------------
@@ -151,7 +183,7 @@ class PromoteFOIAClockTests(TestCase):
             title='FOIA: state records', priority=Task.Priority.HIGH,
             product_slug='admiralty', item_type='foia_request',
             item_id='FOIA-X', url='https://example.com/',
-            fleet_item={'received_at': '2026-04-20'},
+            fleet_item={'received_at': '2026-04-20', 'jurisdiction': 'federal'},
         )
         self.project.refresh_from_db()
         self.assertEqual(self.project.kind, Project.Kind.FOIA)
@@ -160,6 +192,21 @@ class PromoteFOIAClockTests(TestCase):
         # Computed deadline = 2026-04-20 (Mon) + 20 BD = 2026-05-18 (Mon).
         # No holidays fall within the window. (Memorial Day = May 25.)
         self.assertEqual(self.project.foia_statutory_deadline_at, date(2026, 5, 18))
+
+    def test_promote_defaults_to_connecticut_when_no_jurisdiction_supplied(self):
+        # DECD posture: when Admiralty doesn't tell us which statute applies,
+        # default to CT (4 BD acknowledgment), not federal (20 BD substantive).
+        promote_fleet_item_to_task(
+            project=self.project, user=self.user,
+            title='FOIA: CT records', priority=Task.Priority.HIGH,
+            product_slug='admiralty', item_type='foia_request',
+            item_id='FOIA-CT', url='https://example.com/',
+            fleet_item={'received_at': '2026-04-20'},
+        )
+        self.project.refresh_from_db()
+        self.assertEqual(self.project.foia_jurisdiction, 'connecticut')
+        # 2026-04-20 (Mon) + 4 BD = 2026-04-24 (Fri). No CT holidays in window.
+        self.assertEqual(self.project.foia_statutory_deadline_at, date(2026, 4, 24))
 
     def test_promote_idempotent_does_not_duplicate_default_tasks(self):
         promote_fleet_item_to_task(

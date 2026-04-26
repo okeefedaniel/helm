@@ -42,7 +42,11 @@
                 aria-selected="{% if active_tab == 'suite' %}true{% else %}false{% endif %}"
                 onclick="history.replaceState(null, '', '?tab=suite');">
             <i class="bi bi-grid-3x3-gap me-1"></i>Across the suite
-            <span class="pill fleet-health-{{ fleet_health|default:'gray' }} ms-1" style="font-size:.65rem;">
+            <span class="pill fleet-health-{{ fleet_health|default:'gray' }} ms-1"
+                  style="font-size:.65rem; cursor:help;"
+                  data-bs-toggle="tooltip"
+                  data-bs-placement="bottom"
+                  title="Fleet health = freshness of product feed data. Green: all 8 product feeds fresh. Yellow: 1–2 feeds stale. Red: 3+ feeds stale (cron may be failing). Gray: no data yet.">
                 {{ fleet_health|default:"—" }}
             </span>
         </button>

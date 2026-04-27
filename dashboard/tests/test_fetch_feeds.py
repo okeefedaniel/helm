@@ -26,19 +26,19 @@ from dashboard.models import CachedFeedSnapshot
 
 FAKE_FLEET = [
     {
-        'key': 'harbor',
+        'code': 'harbor',
         'label': 'Harbor',
         'url': 'https://harbor.test/',
         'feed_url': 'https://harbor.test/feed/',
     },
     {
-        'key': 'bounty',
+        'code': 'bounty',
         'label': 'Bounty',
         'url': 'https://bounty.test/',
         'feed_url': 'https://bounty.test/feed/',
     },
     {
-        'key': 'beacon',
+        'code': 'beacon',
         'label': 'Beacon',
         'url': 'https://beacon.test/',
         'feed_url': 'https://beacon.test/feed/',
@@ -54,7 +54,7 @@ def _fail(error='boom'):
     return {'ok': False, 'data': None, 'error': error, 'duration_ms': 10}
 
 
-@override_settings(FLEET_PRODUCTS=FAKE_FLEET, HELM_FEED_API_KEY='k', DEMO_MODE=False)
+@override_settings(KEEL_FLEET_PRODUCTS=FAKE_FLEET, HELM_FEED_API_KEY='k', DEMO_MODE=False)
 class FetchFeedsParallelTests(TransactionTestCase):
     def test_parallel_is_default(self):
         """All three fetches overlap — peak concurrency equals 3."""
@@ -159,7 +159,7 @@ class FetchFeedsParallelTests(TransactionTestCase):
             time.sleep(0.2)
 
 
-@override_settings(FLEET_PRODUCTS=FAKE_FLEET, HELM_FEED_API_KEY='k', DEMO_MODE=False)
+@override_settings(KEEL_FLEET_PRODUCTS=FAKE_FLEET, HELM_FEED_API_KEY='k', DEMO_MODE=False)
 class FetchFeedsCircuitBreakerTests(TransactionTestCase):
     def test_opens_after_threshold(self):
         with mock.patch(

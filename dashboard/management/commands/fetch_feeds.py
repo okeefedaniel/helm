@@ -81,7 +81,7 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-        fleet = getattr(settings, 'FLEET_PRODUCTS', [])
+        fleet = getattr(settings, 'KEEL_FLEET_PRODUCTS', [])
         api_key = getattr(settings, 'HELM_FEED_API_KEY', '') or ''
         demo_mode = getattr(settings, 'DEMO_MODE', False)
 
@@ -100,7 +100,7 @@ class Command(BaseCommand):
             feed_url = product.get('feed_url', '')
             if not feed_url:
                 continue
-            if requested and product['key'] not in requested:
+            if requested and product['code'] not in requested:
                 continue
             candidates.append(product)
 
@@ -115,7 +115,7 @@ class Command(BaseCommand):
         for product, open_until in skipped:
             remaining = int((open_until - now).total_seconds())
             self.stdout.write(self.style.WARNING(
-                f'  ⊘ {product["key"]}: circuit open ({remaining}s left)'
+                f'  ⊘ {product["code"]}: circuit open ({remaining}s left)'
             ))
 
         if not products_to_fetch:
@@ -140,13 +140,13 @@ class Command(BaseCommand):
         """Partition candidates into (to_fetch, skipped) using DB state."""
         if ignore:
             return list(products), []
-        keys = [p['key'] for p in products]
+        keys = [p['code'] for p in products]
         snapshots = {
             s.product: s for s in CachedFeedSnapshot.objects.filter(product__in=keys)
         }
         to_fetch, skipped = [], []
         for product in products:
-            snap = snapshots.get(product['key'])
+            snap = snapshots.get(product['code'])
             if snap and snap.circuit_open_until and snap.circuit_open_until > now:
                 skipped.append((product, snap.circuit_open_until))
             else:
@@ -176,7 +176,7 @@ class Command(BaseCommand):
             for future in not_done:
                 product = futures[future]
                 self.stdout.write(self.style.ERROR(
-                    f'  ⏱ {product["key"]}: abandoned after {overall_timeout}s overall budget'
+                    f'  ⏱ {product["code"]}: abandoned after {overall_timeout}s overall budget'
                 ))
         finally:
             # Abandoned threads keep running to completion in the background;
@@ -187,7 +187,7 @@ class Command(BaseCommand):
     def _fetch_one(self, product, api_key, timeout, now, config):
         from keel.feed.client import fetch_product_feed
 
-        key = product['key']
+        key = product['code']
         feed_url = product['feed_url']
 
         self.stdout.write(f'  Fetching {key} from {feed_url} ...')
@@ -214,7 +214,7 @@ class Command(BaseCommand):
         self._record_failure(product, result, now, config)
 
     def _record_failure(self, product, result, now, config):
-        key = product['key']
+        key = product['code']
         existing = CachedFeedSnapshot.objects.filter(product=key).first()
         failures = (existing.consecutive_failures if existing else 0) + 1
         circuit_open_until = None

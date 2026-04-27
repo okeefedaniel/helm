@@ -11,7 +11,7 @@ Design notes:
   endpoint (404), fall back to that peer's existing aggregate
   ``ActionItem`` count from the cached helm-feed snapshot. The user
   sees a count + "Open in <peer>" link instead of itemized titles.
-- Standalone-safe: in the absence of FLEET_PRODUCTS or an API key,
+- Standalone-safe: in the absence of KEEL_FLEET_PRODUCTS or an API key,
   returns an empty inbox without errors.
 """
 from __future__ import annotations
@@ -153,12 +153,17 @@ class InboxAggregator:
         self.user = user
         self.request = request
         self.user_sub = get_user_oidc_sub(user, request)
-        self._fleet = list(getattr(settings, 'FLEET_PRODUCTS', []) or [])
+        # Only peers with a feed_url are reachable for per-user inbox fetch;
+        # this naturally excludes Helm itself from the canonical fleet list.
+        self._fleet = [
+            p for p in (getattr(settings, 'KEEL_FLEET_PRODUCTS', []) or [])
+            if p.get('feed_url')
+        ]
         self._api_key = getattr(settings, 'HELM_FEED_API_KEY', '') or ''
         self._per_product_memo: list[dict] | None = None
 
     def _per_peer(self, product: dict) -> dict:
-        key = product['key']
+        key = product['code']
         # Per-user cache hit
         if self.user_sub:
             cache_key = _peer_inbox_cache_key(key, self.user_sub)
@@ -200,7 +205,7 @@ class InboxAggregator:
         return payload
 
     def get_per_product(self) -> list[dict]:
-        """Return one payload per fleet product, ordered by FLEET_PRODUCTS.
+        """Return one payload per fleet product, ordered by KEEL_FLEET_PRODUCTS.
 
         Each payload is a dict with the UserInbox shape extended with
         product metadata (icon, tagline) and the dashboard's degradation
@@ -227,8 +232,8 @@ class InboxAggregator:
                 try:
                     results[i] = fut.result()
                 except Exception as e:
-                    logger.exception('Inbox fetch failed for %s', self._fleet[i].get('key'))
-                    results[i] = _fallback_from_snapshot(self._fleet[i]['key'])
+                    logger.exception('Inbox fetch failed for %s', self._fleet[i].get('code'))
+                    results[i] = _fallback_from_snapshot(self._fleet[i]['code'])
                     results[i]['unreachable'] = True
                     results[i]['fallback_reason'] = f'aggregator_error: {e}'
 

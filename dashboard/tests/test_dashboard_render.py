@@ -10,8 +10,8 @@ User = get_user_model()
 
 @override_settings(
     HELM_TASKS_ENABLED=True,
-    FLEET_PRODUCTS=[
-        {'key': 'manifest', 'label': 'Manifest', 'icon': 'bi-pen',
+    KEEL_FLEET_PRODUCTS=[
+        {'code': 'manifest', 'label': 'Manifest', 'icon': 'bi-pen',
          'url': 'https://manifest.test/dashboard/',
          'feed_url': 'https://manifest.test/api/v1/helm-feed/',
          'tagline': 'Signing'},

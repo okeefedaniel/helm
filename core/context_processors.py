@@ -12,7 +12,7 @@ def helm_feature_flags(request):
 
 def fleet_context(request):
     """Inject fleet product registry and user access into every template context."""
-    all_products = getattr(settings, 'FLEET_PRODUCTS', [])
+    all_products = getattr(settings, 'KEEL_FLEET_PRODUCTS', [])
     user = getattr(request, 'user', None)
 
     if user and user.is_authenticated:
@@ -20,7 +20,7 @@ def fleet_context(request):
             user_products = all_products
         else:
             accessible = set(user.get_products())
-            user_products = [p for p in all_products if p['key'] in accessible]
+            user_products = [p for p in all_products if p['code'] in accessible]
     else:
         user_products = []
 

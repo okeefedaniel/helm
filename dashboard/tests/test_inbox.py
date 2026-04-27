@@ -12,13 +12,13 @@ User = get_user_model()
 
 FAKE_FLEET = [
     {
-        'key': 'manifest', 'label': 'Manifest', 'icon': 'bi-pen',
+        'code': 'manifest', 'label': 'Manifest', 'icon': 'bi-pen',
         'url': 'https://manifest.test/dashboard/',
         'feed_url': 'https://manifest.test/api/v1/helm-feed/',
         'tagline': 'Signing',
     },
     {
-        'key': 'harbor', 'label': 'Harbor', 'icon': 'bi-bank2',
+        'code': 'harbor', 'label': 'Harbor', 'icon': 'bi-bank2',
         'url': 'https://harbor.test/dashboard/',
         'feed_url': 'https://harbor.test/api/v1/helm-feed/',
         'tagline': 'Grants',
@@ -40,7 +40,7 @@ def _request_with_sub(sub):
     return req
 
 
-@override_settings(FLEET_PRODUCTS=FAKE_FLEET, HELM_FEED_API_KEY='test-key')
+@override_settings(KEEL_FLEET_PRODUCTS=FAKE_FLEET, HELM_FEED_API_KEY='test-key')
 class InboxAggregatorTests(TestCase):
 
     def setUp(self):
@@ -183,7 +183,7 @@ class InboxAggregatorTests(TestCase):
         self.assertTrue(payloads['manifest']['unfiltered'])
         self.assertEqual(payloads['manifest']['aggregate_count'], 1)
 
-    @override_settings(FLEET_PRODUCTS=[])
+    @override_settings(KEEL_FLEET_PRODUCTS=[])
     def test_empty_fleet_returns_empty(self):
         agg = InboxAggregator(self.user, self.req)
         self.assertEqual(agg.get_per_product(), [])

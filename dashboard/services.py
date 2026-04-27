@@ -9,7 +9,7 @@ from .models import CachedFeedSnapshot
 logger = logging.getLogger(__name__)
 
 # Product metadata keyed by product key
-PRODUCT_META = {p['key']: p for p in getattr(settings, 'FLEET_PRODUCTS', [])}
+PRODUCT_META = {p['code']: p for p in getattr(settings, 'KEEL_FLEET_PRODUCTS', [])}
 
 
 def get_user_product_keys(user) -> set[str] | None:

@@ -324,24 +324,23 @@ REST_FRAMEWORK = {
 }
 
 # ---------------------------------------------------------------------------
-# Fleet Product Registry (for dashboard navigation)
+# Fleet Product Registry — sourced from keel.core.fleet.FLEET (imported above
+# as KEEL_FLEET_PRODUCTS). Demo mode rewrites the production hostnames to
+# their demo-* equivalents on a per-entry copy so the shared keel module
+# state is not mutated.
 # ---------------------------------------------------------------------------
-FLEET_PRODUCTS = [
-    {'key': 'harbor', 'label': 'Harbor', 'icon': 'bi-bank2', 'url': 'https://harbor.docklabs.ai/dashboard/', 'feed_url': 'https://harbor.docklabs.ai/api/v1/helm-feed/', 'tagline': 'State Grants'},
-    {'key': 'bounty', 'label': 'Bounty', 'icon': 'bi-globe', 'url': 'https://bounty.docklabs.ai/dashboard/', 'feed_url': 'https://bounty.docklabs.ai/api/v1/helm-feed/', 'tagline': 'Federal Funds'},
-    {'key': 'beacon', 'label': 'Beacon', 'icon': 'bi-broadcast', 'url': 'https://beacon.docklabs.ai/dashboard/', 'feed_url': 'https://beacon.docklabs.ai/api/v1/helm-feed/', 'tagline': 'CRM'},
-    {'key': 'admiralty', 'label': 'Admiralty', 'icon': 'bi-shield-check', 'url': 'https://admiralty.docklabs.ai/dashboard/', 'feed_url': 'https://admiralty.docklabs.ai/api/v1/helm-feed/', 'tagline': 'FOIA'},
-    {'key': 'manifest', 'label': 'Manifest', 'icon': 'bi-pen', 'url': 'https://manifest.docklabs.ai/dashboard/', 'feed_url': 'https://manifest.docklabs.ai/api/v1/helm-feed/', 'tagline': 'Signing'},
-    {'key': 'lookout', 'label': 'Lookout', 'icon': 'bi-binoculars', 'url': 'https://lookout.docklabs.ai/dashboard/', 'feed_url': 'https://lookout.docklabs.ai/api/v1/helm-feed/', 'tagline': 'Legislative'},
-    {'key': 'purser', 'label': 'Purser', 'icon': 'bi-safe2', 'url': 'https://purser.docklabs.ai/dashboard/', 'feed_url': 'https://purser.docklabs.ai/api/v1/helm-feed/', 'tagline': 'Finance'},
-    {'key': 'yeoman', 'label': 'Yeoman', 'icon': 'bi-calendar-event', 'url': 'https://yeoman.docklabs.ai/dashboard/', 'feed_url': 'https://yeoman.docklabs.ai/api/v1/helm-feed/', 'tagline': 'Scheduling'},
-]
-
-# Demo mode uses different base URLs
 if DEMO_MODE:
-    for _p in FLEET_PRODUCTS:
-        _p['url'] = _p['url'].replace('://', '://demo-')
-        _p['feed_url'] = _p['feed_url'].replace('://', '://demo-')
+    KEEL_FLEET_PRODUCTS = [
+        {
+            **p,
+            'url': p['url'].replace('://', '://demo-'),
+            **(
+                {'feed_url': p['feed_url'].replace('://', '://demo-')}
+                if p.get('feed_url') else {}
+            ),
+        }
+        for p in KEEL_FLEET_PRODUCTS
+    ]
 
 # ---------------------------------------------------------------------------
 # Logging

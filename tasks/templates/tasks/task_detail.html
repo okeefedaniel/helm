@@ -4,9 +4,18 @@
 {% block page_title %}{{ task.title }}{% endblock %}
 
 {% block tasks_body %}
-<div class="mb-2">
-    <a href="{{ task.project.get_absolute_url }}" class="small text-muted text-decoration-none"><i class="bi bi-arrow-left"></i> {{ task.project.name }}</a>
-</div>
+<nav aria-label="breadcrumb" class="mb-2">
+    <ol class="breadcrumb small mb-0">
+        <li class="breadcrumb-item"><a href="{% url 'tasks:project_list' %}" class="text-muted text-decoration-none">Projects</a></li>
+        <li class="breadcrumb-item">
+            <a href="{{ task.project.get_absolute_url }}" class="text-muted text-decoration-none">
+                <span class="pill bg-{{ task.project.color }}" style="font-size:.55rem;">&nbsp;</span>
+                {{ task.project.name }}
+            </a>
+        </li>
+        <li class="breadcrumb-item active text-truncate" aria-current="page" style="max-width:60ch;">{{ task.title }}</li>
+    </ol>
+</nav>
 
 <div class="row g-3">
     <div class="col-lg-8">
@@ -106,6 +115,30 @@
                 </form>
             </div>
         </div>
+        <div class="card border-0 shadow-sm mb-3">
+            <div class="card-header bg-white border-bottom py-2 d-flex justify-content-between align-items-center">
+                <h6 class="mb-0 small"><i class="bi bi-list-task me-1"></i>Other open tasks on
+                    <span class="pill bg-{{ task.project.color }}" style="font-size:.55rem;">&nbsp;</span>
+                    {{ task.project.name|truncatechars:24 }}
+                </h6>
+                <span class="pill pill-muted" style="font-size:.6rem;">{{ sibling_tasks|length }}</span>
+            </div>
+            <div class="list-group list-group-flush">
+                {% for sib in sibling_tasks %}
+                <a href="{{ sib.get_absolute_url }}" class="list-group-item list-group-item-action py-2 px-3">
+                    <div class="small text-truncate">{{ sib.title }}</div>
+                    <div class="text-muted" style="font-size:.7rem;">
+                        <span class="pill bg-{{ sib.status|status_pill }}" style="font-size:.55rem;">{{ sib.get_status_display }}</span>
+                        {% if sib.due_date %} &middot; <i class="bi bi-calendar3"></i> {{ sib.due_date|date:"M j" }}{% if sib.is_overdue %} <span class="text-danger">overdue</span>{% endif %}{% endif %}
+                        {% if sib.assignee %} &middot; {{ sib.assignee.get_full_name|default:sib.assignee.username }}{% endif %}
+                    </div>
+                </a>
+                {% empty %}
+                <div class="list-group-item py-2 text-muted small fst-italic">No other open tasks.</div>
+                {% endfor %}
+            </div>
+        </div>
+
         <div class="card border-0 shadow-sm">
             <div class="card-header bg-white border-bottom py-2"><h6 class="mb-0 small">Details</h6></div>
             <div class="card-body small">

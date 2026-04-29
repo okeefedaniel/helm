@@ -214,6 +214,11 @@ def task_detail(request, pk):
     invitable = (User.objects
                  .exclude(pk=task.assignee_id) if task.assignee_id else User.objects.all())
     invitable = invitable.exclude(pk__in=task.collaborators.values_list('user_id', flat=True))
+    sibling_tasks = (task.project.tasks
+                     .exclude(pk=task.pk)
+                     .exclude(status=Task.Status.DONE)
+                     .select_related('assignee')
+                     .order_by('due_date', 'position')[:10])
     return render(request, 'tasks/task_detail.html', {
         'task': task,
         'comments': task.comments.select_related('author'),
@@ -224,6 +229,7 @@ def task_detail(request, pk):
         'comment_form': comment_form,
         'status_choices': Task.Status.choices,
         'priority_choices': Task.Priority.choices,
+        'sibling_tasks': sibling_tasks,
     })
 
 

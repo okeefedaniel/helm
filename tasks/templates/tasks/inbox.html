@@ -1,4 +1,5 @@
 {% extends "tasks/_base.html" %}
+{% load tasks_tags humanize %}
 
 {% block page_title %}Inbox{% endblock %}
 
@@ -7,9 +8,28 @@
     <div class="card-header bg-white border-bottom py-2"><h6 class="mb-0 small"><i class="bi bi-inbox me-1"></i>Unassigned</h6></div>
     <div class="list-group list-group-flush">
         {% for task in tasks %}
-        {% include "tasks/partials/task_row.html" with task=task %}
+        <div class="list-group-item py-2 px-3 d-flex align-items-center gap-2">
+            <a href="{% url 'tasks:task_detail' task.pk %}" class="flex-grow-1 text-decoration-none text-body" style="min-width:0;">
+                <div class="fw-semibold small text-truncate">{{ task.title }}</div>
+                <div class="text-muted" style="font-size:.7rem;">
+                    <span class="pill bg-{{ task.project.color }}" style="font-size:.55rem;">&nbsp;</span>
+                    {{ task.project.name }}
+                    {% if task.due_date %} &middot; <i class="bi bi-calendar3"></i> {{ task.due_date|date:"M j" }}{% if task.is_overdue %} <span class="text-danger">overdue</span>{% endif %}{% endif %}
+                </div>
+            </a>
+            <span class="pill bg-{{ task.priority|priority_pill }}" style="font-size:.6rem;">{{ task.get_priority_display }}</span>
+            <form method="post" action="{% url 'tasks:inbox_claim' task.pk %}" class="m-0">
+                {% csrf_token %}
+                <button class="btn btn-sm btn-primary" type="submit" title="Assign to me">
+                    <i class="bi bi-person-check"></i> Claim
+                </button>
+            </form>
+        </div>
         {% empty %}
-        <div class="px-3 py-4 text-muted small fst-italic text-center">Inbox zero. Nothing to triage.</div>
+        <div class="px-3 py-4 text-muted small text-center">
+            <i class="bi bi-cup-hot d-block mb-2" style="font-size:1.5rem;"></i>
+            Inbox zero. Nothing to triage.
+        </div>
         {% endfor %}
     </div>
 </div>

@@ -7,6 +7,7 @@ app_name = 'tasks'
 urlpatterns = [
     path('', views.my_tasks, name='my_tasks'),
     path('inbox/', views.inbox, name='inbox'),
+    path('inbox/<int:pk>/claim/', views.inbox_claim, name='inbox_claim'),
     path('promote/', views.promote, name='promote'),
 
     # Calendar — must come before any <slug:slug>/ route that could swallow it.

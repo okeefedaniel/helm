@@ -147,6 +147,24 @@ class TasksViewsTests(TestCase):
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, 'Foo')
 
+    def test_inbox_claim_assigns_to_current_user(self):
+        t = Task.objects.create(project=self.project, title='triage me')
+        self.assertIsNone(t.assignee)
+        r = self.client.post(reverse('tasks:inbox_claim', args=[t.pk]))
+        self.assertEqual(r.status_code, 302)
+        t.refresh_from_db()
+        self.assertEqual(t.assignee, self.user)
+
+    def test_inbox_claim_idempotent_when_already_assigned(self):
+        other = User.objects.create_user(
+            username='other', password='pw1234567890', email='other@x.com',
+        )
+        t = Task.objects.create(project=self.project, title='already taken', assignee=other)
+        self.client.post(reverse('tasks:inbox_claim', args=[t.pk]))
+        t.refresh_from_db()
+        # Stays with the original assignee — no silent steal.
+        self.assertEqual(t.assignee, other)
+
     def test_my_tasks_widget_partial(self):
         Task.objects.create(project=self.project, title='widget item', assignee=self.user)
         r = self.client.get(reverse('tasks:partial_my_tasks'))

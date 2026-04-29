@@ -301,6 +301,20 @@ def inbox(request):
 
 
 @login_required
+@task_access_required
+@require_POST
+def inbox_claim(request, pk):
+    """One-click claim of an unassigned task — assigns to the current user."""
+    task = request.task
+    if task.assignee_id is not None:
+        messages.info(request, 'That task is already assigned.')
+    else:
+        update_task(task, user=request.user, assignee=request.user)
+        messages.success(request, f'You claimed "{task.title}".')
+    return redirect('tasks:inbox')
+
+
+@login_required
 def promote(request):
     """Create a task from a fleet item. Called by the promote-button partial."""
     if request.method != 'POST':

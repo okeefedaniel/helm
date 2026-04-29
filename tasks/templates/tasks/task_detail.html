@@ -146,7 +146,23 @@
                     <dt class="col-5 text-muted">Project</dt>
                     <dd class="col-7">{{ task.project.name }}</dd>
                     <dt class="col-5 text-muted">Assignee</dt>
-                    <dd class="col-7">{% if task.assignee %}{{ task.assignee.get_full_name|default:task.assignee.username }}{% else %}<span class="text-muted">Unassigned</span>{% endif %}</dd>
+                    <dd class="col-7">
+                        {% if task.assignee %}{{ task.assignee.get_full_name|default:task.assignee.username }}{% else %}<span class="text-muted">Unassigned</span>{% endif %}
+                        {% if can_reassign %}
+                        <form method="post" action="{% url 'tasks:task_reassign' task.pk %}" class="mt-2 d-flex flex-column gap-1">
+                            {% csrf_token %}
+                            <select name="user_id" class="form-select form-select-sm">
+                                <option value="">— Unassign —</option>
+                                {% for u in reassign_candidates %}
+                                <option value="{{ u.pk }}">{{ u.get_full_name|default:u.username }}</option>
+                                {% endfor %}
+                            </select>
+                            <button class="btn btn-sm btn-outline-secondary" type="submit">
+                                <i class="bi bi-arrow-left-right"></i> Reassign
+                            </button>
+                        </form>
+                        {% endif %}
+                    </dd>
                     <dt class="col-5 text-muted">Created by</dt>
                     <dd class="col-7">{% if task.created_by %}{{ task.created_by.get_full_name|default:task.created_by.username }}{% else %}—{% endif %}</dd>
                     <dt class="col-5 text-muted">Due</dt>

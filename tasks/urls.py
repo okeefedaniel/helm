@@ -77,6 +77,7 @@ urlpatterns = [
     path('t/<int:pk>/status/', views.task_status, name='task_status'),  # legacy alias
     path('t/<int:pk>/transition/', views.task_transition_view, name='task_transition'),
     path('t/<int:pk>/reorder/', views.task_reorder, name='task_reorder'),
+    path('t/<int:pk>/reassign/', views.task_reassign, name='task_reassign'),
     path('t/<int:pk>/collaborators/add/', views.collaborator_add, name='collaborator_add'),
     path('t/<int:pk>/collaborators/<uuid:collab_id>/remove/', views.collaborator_remove, name='collaborator_remove'),
 

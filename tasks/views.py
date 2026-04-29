@@ -14,7 +14,10 @@ from keel.core.archive import ArchiveListView
 
 from keel.core.audit import log_audit
 
-from .access import can_summarize, project_access_required, task_access_required, workflow_view
+from .access import (
+    can_reassign_task, can_summarize, project_access_required,
+    task_access_required, workflow_view,
+)
 from . import exports
 from .forms import (
     ProjectAttachmentForm, ProjectCollaboratorForm, ProjectForm, ProjectNoteForm,
@@ -217,6 +220,22 @@ def task_detail(request, pk):
                      .exclude(status=Task.Status.DONE)
                      .select_related('assignee')
                      .order_by('due_date', 'position')[:10])
+    # Reassign dropdown — project's lead + active project collaborators.
+    # Stays project-scoped so the dropdown is short and meaningful.
+    from django.contrib.auth import get_user_model
+    User = get_user_model()
+    candidate_ids = set(task.project.collaborators
+                        .filter(is_active=True, user__isnull=False)
+                        .values_list('user_id', flat=True))
+    lead_assignment = (task.project.assignments
+                       .filter(status='in_progress')
+                       .values_list('assigned_to_id', flat=True)
+                       .first())
+    if lead_assignment:
+        candidate_ids.add(lead_assignment)
+    candidate_ids.discard(task.assignee_id)
+    reassign_candidates = (User.objects.filter(pk__in=candidate_ids)
+                           .order_by('username'))
     return render(request, 'tasks/task_detail.html', {
         'task': task,
         'comments': task.comments.select_related('author'),
@@ -228,7 +247,33 @@ def task_detail(request, pk):
         'status_choices': Task.Status.choices,
         'priority_choices': Task.Priority.choices,
         'sibling_tasks': sibling_tasks,
+        'reassign_candidates': reassign_candidates,
+        'can_reassign': can_reassign_task(request.user, task),
     })
+
+
+@login_required
+@task_access_required
+@require_POST
+def task_reassign(request, pk):
+    """Change a task's assignee. Restricted to LEAD / current assignee / staff."""
+    task = request.task
+    if not can_reassign_task(request.user, task):
+        return HttpResponse(status=403)
+    raw = request.POST.get('user_id', '').strip()
+    if raw == '':
+        # Empty = unassign (back to inbox).
+        new_assignee = None
+    else:
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
+        new_assignee = get_object_or_404(User, pk=raw)
+    update_task(task, user=request.user, assignee=new_assignee)
+    if new_assignee:
+        messages.success(request, f'Reassigned to {new_assignee.get_full_name() or new_assignee.username}.')
+    else:
+        messages.success(request, 'Task unassigned.')
+    return redirect(task.get_absolute_url())
 
 
 @login_required

@@ -147,6 +147,51 @@ class TasksViewsTests(TestCase):
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, 'Foo')
 
+    def test_task_reassign_by_assignee(self):
+        # The current assignee can hand off.
+        other = User.objects.create_user(
+            username='other_a', password='pw1234567890', email='oa@x.com',
+        )
+        from keel.accounts.models import ProductAccess
+        ProductAccess.objects.create(user=other, product='helm', role='helm_admin')
+        from tasks.services import add_project_collaborator
+        add_project_collaborator(
+            project=self.project, user=self.user, target_user=other,
+        )
+        t = Task.objects.create(project=self.project, title='handoff', assignee=self.user)
+        r = self.client.post(reverse('tasks:task_reassign', args=[t.pk]), {'user_id': other.pk})
+        self.assertEqual(r.status_code, 302)
+        t.refresh_from_db()
+        self.assertEqual(t.assignee, other)
+
+    def test_task_reassign_unassign(self):
+        t = Task.objects.create(project=self.project, title='gone', assignee=self.user)
+        r = self.client.post(reverse('tasks:task_reassign', args=[t.pk]), {'user_id': ''})
+        self.assertEqual(r.status_code, 302)
+        t.refresh_from_db()
+        self.assertIsNone(t.assignee)
+
+    def test_task_reassign_forbidden_for_outsider(self):
+        # Outsider has access to the project (collaborator) but is neither
+        # LEAD, current assignee, nor staff → 403 on reassign.
+        outsider = User.objects.create_user(
+            username='outsider', password='pw1234567890', email='out@x.com',
+        )
+        from keel.accounts.models import ProductAccess
+        ProductAccess.objects.create(user=outsider, product='helm', role='helm_admin')
+        from tasks.services import add_project_collaborator
+        from tasks.models import ProjectCollaborator
+        add_project_collaborator(
+            project=self.project, user=self.user, target_user=outsider,
+            role=ProjectCollaborator.Role.CONTRIBUTOR,
+        )
+        t = Task.objects.create(project=self.project, title='locked', assignee=self.user)
+        self.client.force_login(outsider)
+        r = self.client.post(reverse('tasks:task_reassign', args=[t.pk]), {'user_id': outsider.pk})
+        self.assertEqual(r.status_code, 403)
+        t.refresh_from_db()
+        self.assertEqual(t.assignee, self.user)
+
     def test_inbox_claim_assigns_to_current_user(self):
         t = Task.objects.create(project=self.project, title='triage me')
         self.assertIsNone(t.assignee)

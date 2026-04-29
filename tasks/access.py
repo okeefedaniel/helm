@@ -92,6 +92,37 @@ def _is_htmx(request) -> bool:
     return request.headers.get('HX-Request') == 'true'
 
 
+def can_reassign_task(user, task) -> bool:
+    """Whether ``user`` may change ``task.assignee``.
+
+    Allowed:
+    - superuser / is_staff / role='system_admin'
+    - the current assignee (handing off)
+    - the project's active LEAD (ProjectAssignment IN_PROGRESS)
+    - active ProjectCollaborator with role=LEAD
+    """
+    if user is None or not getattr(user, 'is_authenticated', False):
+        return False
+    if (
+        getattr(user, 'is_superuser', False)
+        or getattr(user, 'is_staff', False)
+        or getattr(user, 'role', '') == 'system_admin'
+    ):
+        return True
+    if task.assignee_id == user.id:
+        return True
+    from tasks.models import ProjectAssignment, ProjectCollaborator
+    if ProjectAssignment.objects.filter(
+        project=task.project, assigned_to=user,
+        status=ProjectAssignment.Status.IN_PROGRESS,
+    ).exists():
+        return True
+    return ProjectCollaborator.objects.filter(
+        project=task.project, user=user, is_active=True,
+        role=ProjectCollaborator.Role.LEAD,
+    ).exists()
+
+
 # ---------------------------------------------------------------------------
 # Project access decorator
 # ---------------------------------------------------------------------------

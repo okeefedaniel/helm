@@ -60,15 +60,13 @@ def _group_by_status(qs):
 
 @login_required
 def my_tasks(request):
-    # "Mine" = tasks I'm assigned OR collaborating on.
-    qs = (Task.objects
-          .filter(Q(assignee=request.user) | Q(collaborators__user=request.user))
-          .distinct()
-          .select_related('project', 'assignee'))
-    groups = _group_by_status(qs)
+    # "Mine" = tasks I'm assigned OR collaborating on. Grouped by project so
+    # the page mirrors the dashboard's project-first deadline rail.
+    from .queries import get_user_tasks_by_project, get_user_open_task_count
+    project_groups = get_user_tasks_by_project(request.user)
     return render(request, 'tasks/my_tasks.html', {
-        'groups': groups,
-        'open_count': qs.exclude(status=Task.Status.DONE).count(),
+        'project_groups': project_groups,
+        'open_count': get_user_open_task_count(request.user),
     })
 
 

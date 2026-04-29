@@ -12,17 +12,23 @@
         </h6>
     </div>
     <div class="card-body p-0">
-        {% for status, label, tasks in groups %}
+        {% for group in project_groups %}
         <div class="px-3 pt-3 pb-1 d-flex align-items-center gap-2">
-            <span class="pill bg-{{ status|status_pill }}" style="font-size:.7rem;">{{ label }}</span>
-            <small class="text-muted">{{ tasks|length }}</small>
+            <a href="{{ group.project.get_absolute_url }}" class="text-decoration-none text-body d-flex align-items-center gap-2">
+                <span class="pill bg-{{ group.project.color }}" style="font-size:.55rem;">&nbsp;</span>
+                <span class="fw-semibold small">{{ group.project.name }}</span>
+            </a>
+            <small class="text-muted">{{ group.tasks|length }}</small>
         </div>
         <div class="list-group list-group-flush">
-            {% for task in tasks %}
+            {% for task in group.tasks %}
             {% include "tasks/partials/task_row.html" with task=task %}
-            {% empty %}
-            <div class="px-3 py-2 text-muted small fst-italic">None.</div>
             {% endfor %}
+        </div>
+        {% empty %}
+        <div class="text-center text-muted small py-5">
+            <i class="bi bi-cup-hot d-block mb-2" style="font-size:1.5rem;"></i>
+            Inbox zero. Nothing assigned to you.
         </div>
         {% endfor %}
     </div>

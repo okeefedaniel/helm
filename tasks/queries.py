@@ -71,3 +71,38 @@ def get_user_undated_count(user) -> int:
 def get_user_open_task_count(user) -> int:
     """Total open task count for the user (any due_date or none)."""
     return _my_open_tasks_qs(user).count()
+
+
+def get_user_tasks_by_project(user):
+    """Group the user's open tasks by project for the /tasks/ list view.
+
+    Returns a list of ``{'project': Project, 'tasks': [Task, ...]}`` dicts.
+    Within each project, tasks are sorted by due_date asc with undated
+    tasks at the bottom (then by position). Projects are ordered by
+    their soonest-due open task — projects with no dated tasks fall to
+    the end, then ordered by name.
+
+    Predicate matches :func:`_my_open_tasks_qs` so this view never
+    drifts from the dashboard rail.
+    """
+    from datetime import date
+    from django.db.models import F
+    qs = _my_open_tasks_qs(user).order_by(F('due_date').asc(nulls_last=True), 'position')
+    far_future = date.max
+    grouped: dict[int, dict] = {}
+    for task in qs:
+        bucket = grouped.setdefault(task.project_id, {
+            'project': task.project,
+            'tasks': [],
+            '_soonest': far_future,
+        })
+        bucket['tasks'].append(task)
+        if task.due_date and task.due_date < bucket['_soonest']:
+            bucket['_soonest'] = task.due_date
+    ordered = sorted(
+        grouped.values(),
+        key=lambda b: (b['_soonest'], b['project'].name.lower()),
+    )
+    for b in ordered:
+        b.pop('_soonest', None)
+    return ordered

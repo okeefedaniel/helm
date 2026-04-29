@@ -149,6 +149,17 @@ class CalendarEventsJSONTests(TestCase):
         foia_event = next(e for e in events if 'FOIA Test' in e['title'])
         self.assertEqual(foia_event.get('borderColor'), '#dc2626')
 
+    def test_task_event_carries_task_detail_url(self):
+        events = self._events()
+        task_event = next(e for e in events if e['title'] == 'Open task with due')
+        task = Task.objects.get(title='Open task with due')
+        self.assertEqual(task_event['url'], task.get_absolute_url())
+
+    def test_project_event_carries_project_detail_url(self):
+        events = self._events()
+        target_event = next(e for e in events if e['title'] == '⛳ Visible')
+        self.assertEqual(target_event['url'], self.visible.get_absolute_url())
+
     def test_overdue_task_colored_red(self):
         # Make the visible task overdue.
         Task.objects.filter(project=self.visible).update(

@@ -182,7 +182,7 @@ def calendar_events_json(request):
             'title': t.title,
             'start': t.due_date.isoformat(),
             'allDay': True,
-            'url': f'/tasks/projects/{t.project.slug}/',
+            'url': t.get_absolute_url(),
             'color': color,
             'extendedProps': {
                 'kind': 'task_due',

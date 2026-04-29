@@ -1,0 +1,27 @@
+{% comment %}
+Tab strip linking the three personal-work surfaces — My tasks (assigned
++ collaborator), Unassigned (inbox triage), Calendar. Different lenses
+on the same set, so they should read as siblings.
+
+Caller passes nothing; we derive `active` from request.resolver_match.
+{% endcomment %}
+<ul class="nav nav-tabs mb-3" role="tablist">
+    <li class="nav-item" role="presentation">
+        <a class="nav-link {% if request.resolver_match.url_name == 'my_tasks' %}active{% endif %}"
+           href="{% url 'tasks:my_tasks' %}" role="tab">
+            <i class="bi bi-person-check me-1"></i>My tasks
+        </a>
+    </li>
+    <li class="nav-item" role="presentation">
+        <a class="nav-link {% if request.resolver_match.url_name == 'inbox' %}active{% endif %}"
+           href="{% url 'tasks:inbox' %}" role="tab">
+            <i class="bi bi-inbox me-1"></i>Unassigned
+        </a>
+    </li>
+    <li class="nav-item" role="presentation">
+        <a class="nav-link {% if request.resolver_match.url_name == 'calendar_index' %}active{% endif %}"
+           href="{% url 'tasks:calendar_index' %}" role="tab">
+            <i class="bi bi-calendar3 me-1"></i>Calendar
+        </a>
+    </li>
+</ul>

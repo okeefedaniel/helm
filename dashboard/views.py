@@ -43,10 +43,10 @@ def _today_tab_context(request) -> dict:
     # Deadline rail (column 1) — only when the tasks app is installed.
     if getattr(settings, 'HELM_TASKS_ENABLED', False):
         from tasks.queries import (
-            get_user_deadline_rail, get_user_open_task_count,
+            get_user_open_task_count, get_user_project_deadline_rail,
             get_user_undated_count,
         )
-        ctx['deadline_rail'] = get_user_deadline_rail(user)
+        ctx['deadline_rail'] = get_user_project_deadline_rail(user)
         ctx['my_open_task_count'] = get_user_open_task_count(user)
         ctx['my_undated_task_count'] = get_user_undated_count(user)
     else:

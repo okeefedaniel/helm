@@ -9,6 +9,7 @@ from tasks.models import Task
 from tasks.queries import (
     get_user_deadline_rail,
     get_user_open_task_count,
+    get_user_project_deadline_rail,
     get_user_undated_count,
 )
 from tasks.services import (
@@ -89,3 +90,84 @@ class DeadlineRailTests(TestCase):
         self._task('open', self.today)
         self._task('done', self.today - timedelta(days=1), status=Task.Status.DONE)
         self.assertEqual(get_user_open_task_count(self.user), 1)
+
+
+@override_settings(HELM_TASKS_ENABLED=True)
+class ProjectDeadlineRailTests(TestCase):
+    """Project-grouped variant used by the dashboard's My Work column."""
+
+    def setUp(self):
+        self.user = User.objects.create_user(username='dok', email='dok@t.local')
+        self.today = timezone.localdate()
+
+    def _task(self, project, title, due_date):
+        return create_task(
+            project=project, user=self.user, title=title,
+            due_date=due_date, assignee=self.user,
+        )
+
+    def test_one_row_per_project_with_count(self):
+        p = create_project(name='CIP North Haven', user=self.user)
+        self._task(p, 'task-a', self.today)
+        self._task(p, 'task-b', self.today + timedelta(days=2))
+        self._task(p, 'task-c', self.today + timedelta(days=3))
+        rail = get_user_project_deadline_rail(self.user)
+        # Project lands in `today` (most urgent of its tasks) and rolls up
+        # all three dated tasks into total_count.
+        self.assertEqual(len(rail['today']), 1)
+        self.assertEqual(rail['this_week'], [])
+        entry = rail['today'][0]
+        self.assertEqual(entry['project'], p)
+        self.assertEqual(entry['total_count'], 3)
+
+    def test_project_with_overdue_lands_in_overdue_bucket(self):
+        # Same project carries one overdue task and one task next week — it
+        # should appear once, in `overdue`, with total_count covering both.
+        p = create_project(name='FOIA Case 42', user=self.user)
+        self._task(p, 'overdue-thing', self.today - timedelta(days=2))
+        self._task(p, 'next-week', self.today + timedelta(days=5))
+        rail = get_user_project_deadline_rail(self.user)
+        self.assertEqual(len(rail['overdue']), 1)
+        self.assertEqual(rail['this_week'], [])
+        entry = rail['overdue'][0]
+        self.assertEqual(entry['total_count'], 2)
+        self.assertTrue(entry['has_overdue'])
+        # The "soonest" task driving urgency is the overdue one.
+        self.assertEqual(entry['soonest_task'].title, 'overdue-thing')
+
+    def test_soonest_task_is_min_due_date_within_bucket(self):
+        p = create_project(name='Multi-task', user=self.user)
+        self._task(p, 'later', self.today + timedelta(days=5))
+        self._task(p, 'sooner', self.today + timedelta(days=2))
+        rail = get_user_project_deadline_rail(self.user)
+        self.assertEqual(len(rail['this_week']), 1)
+        self.assertEqual(rail['this_week'][0]['soonest_task'].title, 'sooner')
+
+    def test_distinct_projects_distinct_rows(self):
+        p1 = create_project(name='Alpha', user=self.user)
+        p2 = create_project(name='Beta', user=self.user)
+        self._task(p1, 'a-today', self.today)
+        self._task(p2, 'b-today', self.today)
+        rail = get_user_project_deadline_rail(self.user)
+        self.assertEqual(len(rail['today']), 2)
+        self.assertEqual({e['project'].name for e in rail['today']}, {'Alpha', 'Beta'})
+
+    def test_undated_tasks_omitted(self):
+        p = create_project(name='Sparse', user=self.user)
+        self._task(p, 'no-due', None)
+        rail = get_user_project_deadline_rail(self.user)
+        self.assertEqual(rail['overdue'], [])
+        self.assertEqual(rail['today'], [])
+        self.assertEqual(rail['this_week'], [])
+        self.assertEqual(rail['upcoming'], [])
+
+    def test_done_tasks_omitted_from_grouping(self):
+        p = create_project(name='Mostly Done', user=self.user)
+        done = self._task(p, 'done-overdue', self.today - timedelta(days=1))
+        done.status = Task.Status.DONE
+        done.save(update_fields=['status'])
+        self._task(p, 'live-today', self.today)
+        rail = get_user_project_deadline_rail(self.user)
+        self.assertEqual(len(rail['today']), 1)
+        self.assertEqual(rail['today'][0]['total_count'], 1)
+        self.assertEqual(rail['overdue'], [])

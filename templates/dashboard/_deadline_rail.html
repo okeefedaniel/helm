@@ -1,8 +1,10 @@
 {% load humanize %}
 
 {% comment %}
-Column 1: My Work — deadline rail grouped by Today / This week / Overdue.
-Tasks the user assigns or collaborates on; click-through to detail.
+Column 1: My Work — projects with open dated tasks for this user, grouped
+by the most urgent task's bucket (Overdue / Today / This week / Upcoming).
+Each row is a project; click-through goes to the project page so the user
+lands where all of that project's work lives in context.
 {% endcomment %}
 <div class="card border-0 shadow-sm h-100">
     <div class="card-header bg-white border-bottom py-2 d-flex justify-content-between align-items-center">
@@ -40,12 +42,20 @@ Tasks the user assigns or collaborates on; click-through to detail.
             </div>
         </div>
         <div class="list-group list-group-flush">
-            {% for task in deadline_rail.overdue %}
-            <a href="{{ task.get_absolute_url }}" class="list-group-item list-group-item-action py-2 px-3 list-group-item-danger">
-                <div class="fw-semibold small text-truncate">{{ task.title }}</div>
-                <div class="text-muted" style="font-size:.7rem;">
-                    <i class="bi bi-folder me-1"></i>{{ task.project.name|truncatechars:30 }}
-                    &middot; due {{ task.due_date|naturalday }}
+            {% for entry in deadline_rail.overdue %}
+            <a href="{{ entry.project.get_absolute_url }}" class="list-group-item list-group-item-action py-2 px-3 list-group-item-danger">
+                <div class="d-flex justify-content-between align-items-start gap-2">
+                    <div class="fw-semibold small text-truncate flex-grow-1">
+                        <span class="pill bg-{{ entry.project.color }}" style="font-size:.55rem;">&nbsp;</span>
+                        {{ entry.project.name|truncatechars:38 }}
+                    </div>
+                    {% if entry.total_count > 1 %}
+                    <span class="pill pill-muted flex-shrink-0" style="font-size:.65rem;">{{ entry.total_count }} due</span>
+                    {% endif %}
+                </div>
+                <div class="text-muted text-truncate" style="font-size:.7rem;">
+                    <i class="bi bi-check2 me-1"></i>{{ entry.soonest_task.title|truncatechars:38 }}
+                    &middot; due {{ entry.soonest_task.due_date|naturalday }}
                 </div>
             </a>
             {% endfor %}
@@ -59,11 +69,19 @@ Tasks the user assigns or collaborates on; click-through to detail.
             </div>
         </div>
         <div class="list-group list-group-flush">
-            {% for task in deadline_rail.today %}
-            <a href="{{ task.get_absolute_url }}" class="list-group-item list-group-item-action py-2 px-3">
-                <div class="fw-semibold small text-truncate">{{ task.title }}</div>
-                <div class="text-muted" style="font-size:.7rem;">
-                    <i class="bi bi-folder me-1"></i>{{ task.project.name|truncatechars:30 }}
+            {% for entry in deadline_rail.today %}
+            <a href="{{ entry.project.get_absolute_url }}" class="list-group-item list-group-item-action py-2 px-3">
+                <div class="d-flex justify-content-between align-items-start gap-2">
+                    <div class="fw-semibold small text-truncate flex-grow-1">
+                        <span class="pill bg-{{ entry.project.color }}" style="font-size:.55rem;">&nbsp;</span>
+                        {{ entry.project.name|truncatechars:38 }}
+                    </div>
+                    {% if entry.total_count > 1 %}
+                    <span class="pill pill-muted flex-shrink-0" style="font-size:.65rem;">{{ entry.total_count }} due</span>
+                    {% endif %}
+                </div>
+                <div class="text-muted text-truncate" style="font-size:.7rem;">
+                    <i class="bi bi-check2 me-1"></i>{{ entry.soonest_task.title|truncatechars:38 }}
                 </div>
             </a>
             {% endfor %}
@@ -77,12 +95,20 @@ Tasks the user assigns or collaborates on; click-through to detail.
             </div>
         </div>
         <div class="list-group list-group-flush">
-            {% for task in deadline_rail.this_week %}
-            <a href="{{ task.get_absolute_url }}" class="list-group-item list-group-item-action py-2 px-3">
-                <div class="fw-semibold small text-truncate">{{ task.title }}</div>
-                <div class="text-muted" style="font-size:.7rem;">
-                    <i class="bi bi-folder me-1"></i>{{ task.project.name|truncatechars:30 }}
-                    &middot; {{ task.due_date|naturalday }}
+            {% for entry in deadline_rail.this_week %}
+            <a href="{{ entry.project.get_absolute_url }}" class="list-group-item list-group-item-action py-2 px-3">
+                <div class="d-flex justify-content-between align-items-start gap-2">
+                    <div class="fw-semibold small text-truncate flex-grow-1">
+                        <span class="pill bg-{{ entry.project.color }}" style="font-size:.55rem;">&nbsp;</span>
+                        {{ entry.project.name|truncatechars:38 }}
+                    </div>
+                    {% if entry.total_count > 1 %}
+                    <span class="pill pill-muted flex-shrink-0" style="font-size:.65rem;">{{ entry.total_count }} due</span>
+                    {% endif %}
+                </div>
+                <div class="text-muted text-truncate" style="font-size:.7rem;">
+                    <i class="bi bi-check2 me-1"></i>{{ entry.soonest_task.title|truncatechars:38 }}
+                    &middot; {{ entry.soonest_task.due_date|naturalday }}
                 </div>
             </a>
             {% endfor %}
@@ -96,12 +122,20 @@ Tasks the user assigns or collaborates on; click-through to detail.
             </div>
         </div>
         <div class="list-group list-group-flush">
-            {% for task in deadline_rail.upcoming %}
-            <a href="{{ task.get_absolute_url }}" class="list-group-item list-group-item-action py-2 px-3">
-                <div class="fw-semibold small text-truncate">{{ task.title }}</div>
-                <div class="text-muted" style="font-size:.7rem;">
-                    <i class="bi bi-folder me-1"></i>{{ task.project.name|truncatechars:30 }}
-                    &middot; {{ task.due_date|naturalday }}
+            {% for entry in deadline_rail.upcoming %}
+            <a href="{{ entry.project.get_absolute_url }}" class="list-group-item list-group-item-action py-2 px-3">
+                <div class="d-flex justify-content-between align-items-start gap-2">
+                    <div class="fw-semibold small text-truncate flex-grow-1">
+                        <span class="pill bg-{{ entry.project.color }}" style="font-size:.55rem;">&nbsp;</span>
+                        {{ entry.project.name|truncatechars:38 }}
+                    </div>
+                    {% if entry.total_count > 1 %}
+                    <span class="pill pill-muted flex-shrink-0" style="font-size:.65rem;">{{ entry.total_count }} due</span>
+                    {% endif %}
+                </div>
+                <div class="text-muted text-truncate" style="font-size:.7rem;">
+                    <i class="bi bi-check2 me-1"></i>{{ entry.soonest_task.title|truncatechars:38 }}
+                    &middot; {{ entry.soonest_task.due_date|naturalday }}
                 </div>
             </a>
             {% endfor %}

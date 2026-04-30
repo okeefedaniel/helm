@@ -27,9 +27,9 @@ jobs:
             exit 1
           fi
 
-          if ! jq -e '.flags.healthy == true' "$response" > /dev/null; then
-            echo "::error::flags.healthy is not true"
-            jq '.flags' "$response"
+          if ! jq -e '.healthy == true' "$response" > /dev/null; then
+            echo "::error::healthy is not true"
+            jq '{healthy: .healthy, flags: .flags}' "$response"
             exit 1
           fi
 

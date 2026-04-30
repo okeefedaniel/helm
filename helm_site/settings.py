@@ -302,7 +302,7 @@ KEEL_AI_MAX_TOKENS = 600
 KEEL_API_KEY = os.environ.get('KEEL_API_KEY', '')
 KEEL_API_URL = os.environ.get('KEEL_API_URL', 'https://keel.docklabs.ai')
 HELM_FEED_API_KEY = os.environ.get('HELM_FEED_API_KEY', '')
-HELM_METRICS_TOKEN = os.environ.get('HELM_METRICS_TOKEN', '')
+KEEL_METRICS_TOKEN = os.environ.get('HELM_METRICS_TOKEN', '')
 
 # ---------------------------------------------------------------------------
 # DRF

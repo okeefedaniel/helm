@@ -119,7 +119,7 @@ class MetricsEndpointTests(TestCase):
         self.assertTrue(data['healthy'])
 
     def test_bearer_token_bypasses_staff_requirement(self):
-        with self.settings(HELM_METRICS_TOKEN='secret-canary'):
+        with self.settings(KEEL_METRICS_TOKEN='secret-canary'):
             r = self.client.get(
                 reverse('api:metrics'),
                 HTTP_AUTHORIZATION='Bearer secret-canary',
@@ -128,7 +128,7 @@ class MetricsEndpointTests(TestCase):
         self.assertIn('flags', r.json())
 
     def test_bearer_token_wrong_value_falls_through_to_staff(self):
-        with self.settings(HELM_METRICS_TOKEN='secret-canary'):
+        with self.settings(KEEL_METRICS_TOKEN='secret-canary'):
             r = self.client.get(
                 reverse('api:metrics'),
                 HTTP_AUTHORIZATION='Bearer wrong-token',
@@ -136,7 +136,7 @@ class MetricsEndpointTests(TestCase):
         self.assertEqual(r.status_code, 302)
 
     def test_bearer_token_unset_means_no_bypass(self):
-        with self.settings(HELM_METRICS_TOKEN=''):
+        with self.settings(KEEL_METRICS_TOKEN=''):
             r = self.client.get(
                 reverse('api:metrics'),
                 HTTP_AUTHORIZATION='Bearer anything',

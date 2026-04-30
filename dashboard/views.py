@@ -43,10 +43,10 @@ def _today_tab_context(request) -> dict:
     # Deadline rail (column 1) — only when the tasks app is installed.
     if getattr(settings, 'HELM_TASKS_ENABLED', False):
         from tasks.queries import (
-            get_user_deadline_rail, get_user_open_task_count,
+            get_user_open_task_count, get_user_project_deadline_rail,
             get_user_undated_count,
         )
-        ctx['deadline_rail'] = get_user_deadline_rail(user)
+        ctx['deadline_rail'] = get_user_project_deadline_rail(user)
         ctx['my_open_task_count'] = get_user_open_task_count(user)
         ctx['my_undated_task_count'] = get_user_undated_count(user)
     else:
@@ -77,6 +77,17 @@ def _today_tab_context(request) -> dict:
         )
     except Exception:
         ctx['helm_unread_notifications'] = []
+
+    # Staff-only ops canaries (rendered inline in the alerts column).
+    if user.is_staff:
+        from keel.ops.canary import FLAG_LABELS, build_canary_payload
+        from api.metrics import _helm_extras
+        try:
+            ctx['canary'] = build_canary_payload(extras_callable=_helm_extras)
+            ctx['canary_flag_labels'] = FLAG_LABELS
+        except Exception:
+            ctx['canary'] = None
+            ctx['canary_flag_labels'] = FLAG_LABELS
 
     return ctx
 

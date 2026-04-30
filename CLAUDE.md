@@ -79,16 +79,15 @@ Helm's registered jobs:
 
 ## Operational metrics
 
-`GET /api/v1/metrics/` returns JSON counters useful for monitoring. Auth: either staff session (browser) **or** `Authorization: Bearer $HELM_METRICS_TOKEN` for external pollers.
+`GET /api/v1/metrics/` returns JSON counters useful for monitoring. Powered by `keel.ops` (see `keel/CLAUDE.md` → "Ops canary"); helm's [`api/metrics.py`](api/metrics.py) is a thin wrapper that adds product-specific gauges (project lifecycle, task buckets, FOIA queue depth) via the `extras_callable` hook. Auth: either staff session (browser) **or** `Authorization: Bearer $HELM_METRICS_TOKEN` for external pollers.
 
 ```bash
-# External monitoring (cron-job.org, BetterUptime, Pingdom, etc.):
 curl -H "Authorization: Bearer $HELM_METRICS_TOKEN" \
   https://helm.docklabs.ai/api/v1/metrics/ | jq .flags
 # {"audit_silent_24h": false, "cron_silent_24h": false, "cron_failures_24h": false, "notifications_failing": false}
 ```
 
-**Polling setup (cron-job.org, free tier):** create a job hitting the URL above every 15 min with the Bearer header, and configure failure notifications on non-200 status OR response body NOT containing `"healthy":true`. This is the alert path that would have caught the 2026-04-26 silent-cron incident — without an external poller, `flags.cron_silent_24h` flipping true is invisible. The four `flags.*` booleans are the canaries:
+**Polling is wired via GitHub Actions** at [`.github/workflows/canary.yml`](.github/workflows/canary.yml) — runs every 15min, fails the workflow on non-200 or `healthy != true`, and opens (or de-dupes) a `canary`-labeled GitHub issue on failure. Auth uses the `HELM_METRICS_TOKEN` repo secret. We chose GitHub Actions over cron-job.org / BetterUptime / Pingdom because the schedule, the alert (an issue in this repo), and the secret all live in one place we already operate. This is the alert path that would have caught the 2026-04-26 silent-cron incident — without it, `flags.cron_silent_24h` flipping true is invisible. The four `flags.*` booleans are the canaries:
 
 - `audit_silent_24h` — true means no `AuditLog` rows written in 24h. **This is the canary that would have caught the 4-week silent-audit bug on day 1.** See `incidents/2026-04-25-audit-gap.md`.
 - `cron_silent_24h` — true means no `CommandRun` rows in 24h (cron isn't firing).

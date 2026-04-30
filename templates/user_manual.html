@@ -622,7 +622,7 @@ archived → active/completed/cancelled (unarchive restores prior state)</pre>
                     </div>
                 </div>
             </div>
-            <p class="small text-muted mt-3 mb-0"><code>flags.healthy: false</code> is the simplest top-level alert.</p>
+            <p class="small text-muted mt-3 mb-0"><code>healthy: false</code> (top-level, not nested under <code>flags</code>) is the simplest alert condition. Polled every 15min by <a href="https://github.com/okeefedaniel/helm/blob/main/.github/workflows/canary.yml">GitHub Actions</a>; flags also render inline as green/red chips in the staff "Ops canaries" sub-card on the dashboard.</p>
         </section>
 
         <!-- ============================================================== -->

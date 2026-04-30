@@ -78,6 +78,17 @@ def _today_tab_context(request) -> dict:
     except Exception:
         ctx['helm_unread_notifications'] = []
 
+    # Staff-only ops canaries (rendered inline in the alerts column).
+    if user.is_staff:
+        from keel.ops.canary import FLAG_LABELS, build_canary_payload
+        from api.metrics import _helm_extras
+        try:
+            ctx['canary'] = build_canary_payload(extras_callable=_helm_extras)
+            ctx['canary_flag_labels'] = FLAG_LABELS
+        except Exception:
+            ctx['canary'] = None
+            ctx['canary_flag_labels'] = FLAG_LABELS
+
     return ctx
 
 

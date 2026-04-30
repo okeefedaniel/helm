@@ -1,0 +1,706 @@
+{% extends "base.html" %}
+
+{% block page_title %}User Manual{% endblock %}
+
+{% block extra_css %}
+{{ block.super }}
+<style>
+    .manual-nav {
+        position: sticky;
+        top: 80px;
+        max-height: calc(100vh - 100px);
+        overflow-y: auto;
+    }
+    .manual-nav .nav-link {
+        color: var(--text-secondary, #4a5568);
+        padding: 0.35rem 0.75rem;
+        font-size: 0.875rem;
+        border-left: 3px solid transparent;
+        border-radius: 0;
+    }
+    .manual-nav .nav-link:hover,
+    .manual-nav .nav-link.active {
+        color: var(--ct-blue, #1565c0);
+        border-left-color: var(--ct-blue, #1565c0);
+        background-color: rgba(21, 101, 192, 0.06);
+    }
+    .manual-section {
+        scroll-margin-top: 90px;
+    }
+    .manual-section h2 {
+        border-bottom: 2px solid #cfd8dc;
+        padding-bottom: 0.5rem;
+    }
+    .manual-section h3 {
+        color: #1565c0;
+    }
+    .role-pill {
+        display: inline-block;
+        padding: 0.25rem 0.75rem;
+        border-radius: 0.375rem;
+        font-size: 0.8125rem;
+        font-weight: 600;
+    }
+    .role-admin    { background-color: #263238; color: #ffffff; }
+    .role-director { background-color: #e3f2fd; color: #1565c0; }
+    .role-viewer   { background-color: #e8f5e9; color: #2e7d32; }
+    .collab-lead        { background-color: #fff3e0; color: #e65100; }
+    .collab-contributor { background-color: #e8f5e9; color: #2e7d32; }
+    .collab-reviewer    { background-color: #ede7f6; color: #4527a0; }
+    .collab-observer    { background-color: #eceff1; color: #455a64; }
+    .workflow-step {
+        display: flex;
+        align-items: flex-start;
+        gap: 1rem;
+        padding: 0.75rem 0;
+    }
+    .workflow-step .step-num {
+        flex-shrink: 0;
+        width: 2rem;
+        height: 2rem;
+        border-radius: 50%;
+        background-color: #1565c0;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 0.875rem;
+    }
+    .status-flow {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    .status-flow .badge {
+        font-size: 0.8125rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+<div class="row">
+    <!-- Sidebar nav (desktop) -->
+    <div class="col-lg-3 d-none d-lg-block">
+        <nav class="manual-nav" aria-label="Manual sections">
+            <h6 class="fw-bold text-uppercase text-muted small mb-3 px-2">Contents</h6>
+            <ul class="nav flex-column">
+                <li class="nav-item"><a class="nav-link" href="#overview"><i class="bi bi-house me-2"></i>Overview</a></li>
+                <li class="nav-item"><a class="nav-link" href="#roles"><i class="bi bi-shield-lock me-2"></i>Roles</a></li>
+                <li class="nav-item"><a class="nav-link" href="#getting-started"><i class="bi bi-rocket-takeoff me-2"></i>Getting Started</a></li>
+                <li class="nav-item"><a class="nav-link" href="#today"><i class="bi bi-sun me-2"></i>Today Tab</a></li>
+                <li class="nav-item"><a class="nav-link" href="#suite"><i class="bi bi-grid me-2"></i>Across the Suite</a></li>
+                <li class="nav-item"><a class="nav-link" href="#projects"><i class="bi bi-folder me-2"></i>Projects</a></li>
+                <li class="nav-item"><a class="nav-link" href="#tasks"><i class="bi bi-check2-square me-2"></i>Tasks</a></li>
+                <li class="nav-item"><a class="nav-link" href="#collab"><i class="bi bi-people me-2"></i>Collaboration</a></li>
+                <li class="nav-item"><a class="nav-link" href="#foia"><i class="bi bi-stopwatch me-2"></i>FOIA Projects</a></li>
+                <li class="nav-item"><a class="nav-link" href="#cip"><i class="bi bi-bank me-2"></i>CIP Projects</a></li>
+                <li class="nav-item"><a class="nav-link" href="#public"><i class="bi bi-globe me-2"></i>Public Transparency</a></li>
+                <li class="nav-item"><a class="nav-link" href="#calendar"><i class="bi bi-calendar2-week me-2"></i>Calendar</a></li>
+                <li class="nav-item"><a class="nav-link" href="#notifications"><i class="bi bi-bell me-2"></i>Notifications</a></li>
+                <li class="nav-item"><a class="nav-link" href="#exports"><i class="bi bi-download me-2"></i>Exports &amp; AI</a></li>
+                <li class="nav-item"><a class="nav-link" href="#health"><i class="bi bi-activity me-2"></i>Health &amp; Jobs</a></li>
+                <li class="nav-item"><a class="nav-link" href="#statuses"><i class="bi bi-diagram-3 me-2"></i>Status Reference</a></li>
+                <li class="nav-item"><a class="nav-link" href="#shortcuts"><i class="bi bi-keyboard me-2"></i>Keyboard Shortcuts</a></li>
+            </ul>
+        </nav>
+    </div>
+
+    <!-- Main content -->
+    <div class="col-lg-9">
+
+        <!-- Mobile TOC -->
+        <div class="d-lg-none mb-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <button class="btn btn-outline-primary btn-sm w-100" type="button" data-bs-toggle="collapse" data-bs-target="#mobileToc">
+                        <i class="bi bi-list me-2"></i>Table of Contents
+                    </button>
+                    <div class="collapse mt-3" id="mobileToc">
+                        <div class="list-group list-group-flush">
+                            <a href="#overview" class="list-group-item list-group-item-action small">Overview</a>
+                            <a href="#roles" class="list-group-item list-group-item-action small">Roles</a>
+                            <a href="#getting-started" class="list-group-item list-group-item-action small">Getting Started</a>
+                            <a href="#today" class="list-group-item list-group-item-action small">Today Tab</a>
+                            <a href="#suite" class="list-group-item list-group-item-action small">Across the Suite</a>
+                            <a href="#projects" class="list-group-item list-group-item-action small">Projects</a>
+                            <a href="#tasks" class="list-group-item list-group-item-action small">Tasks</a>
+                            <a href="#collab" class="list-group-item list-group-item-action small">Collaboration</a>
+                            <a href="#foia" class="list-group-item list-group-item-action small">FOIA Projects</a>
+                            <a href="#cip" class="list-group-item list-group-item-action small">CIP Projects</a>
+                            <a href="#public" class="list-group-item list-group-item-action small">Public Transparency</a>
+                            <a href="#calendar" class="list-group-item list-group-item-action small">Calendar</a>
+                            <a href="#notifications" class="list-group-item list-group-item-action small">Notifications</a>
+                            <a href="#exports" class="list-group-item list-group-item-action small">Exports &amp; AI</a>
+                            <a href="#health" class="list-group-item list-group-item-action small">Health &amp; Jobs</a>
+                            <a href="#statuses" class="list-group-item list-group-item-action small">Status Reference</a>
+                            <a href="#shortcuts" class="list-group-item list-group-item-action small">Keyboard Shortcuts</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1 class="fw-bold mb-1">Helm User Manual</h1>
+                <p class="text-muted mb-0">Comprehensive guide to the executive dashboard for the DockLabs suite.</p>
+            </div>
+            <a href="{% url 'help' %}" class="btn btn-outline-primary btn-sm" title="Open the FAQ">
+                <i class="bi bi-question-circle me-1"></i> FAQ
+            </a>
+        </div>
+
+        <!-- ============================================================== -->
+        <!-- OVERVIEW -->
+        <!-- ============================================================== -->
+        <section id="overview" class="manual-section mb-5">
+            <h2 class="fw-bold mb-3"><i class="bi bi-house me-2 text-primary"></i>Overview</h2>
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-body p-4 lh-lg">
+                    <p>Helm is the executive dashboard for the DockLabs suite. It rolls up real-time metrics, action items, and alerts from every peer product into a single view, and hosts a lightweight project-management surface for cross-cutting work the peer products don't already own.</p>
+                    <div class="row g-3 mt-2">
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-start gap-2">
+                                <i class="bi bi-bar-chart-line text-primary fs-5 mt-1"></i>
+                                <div>
+                                    <strong>Cross-fleet dashboards</strong>
+                                    <p class="small text-muted mb-0">See real-time metrics from every DockLabs product in one executive view.</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-start gap-2">
+                                <i class="bi bi-inbox text-primary fs-5 mt-1"></i>
+                                <div>
+                                    <strong>Awaiting Me</strong>
+                                    <p class="small text-muted mb-0">Items across the suite where <em>you</em> are the gating dependency.</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-start gap-2">
+                                <i class="bi bi-folder text-primary fs-5 mt-1"></i>
+                                <div>
+                                    <strong>Projects &amp; tasks</strong>
+                                    <p class="small text-muted mb-0">Standard, FOIA, and Capital Improvement Plan projects with collaborators, notes, and attachments.</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-start gap-2">
+                                <i class="bi bi-shield-check text-primary fs-5 mt-1"></i>
+                                <div>
+                                    <strong>Compliance &amp; audit</strong>
+                                    <p class="small text-muted mb-0">Statutory FOIA clocks, CIP federal-fund posture, full status history, and ops canaries.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ============================================================== -->
+        <!-- ROLES -->
+        <!-- ============================================================== -->
+        <section id="roles" class="manual-section mb-5">
+            <h2 class="fw-bold mb-3"><i class="bi bi-shield-lock me-2 text-primary"></i>Roles</h2>
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-4">
+                    <p>Helm-specific roles are issued via Keel SSO and surfaced in your sidebar profile.</p>
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr><th>Role</th><th>Capability</th></tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><span class="role-pill role-admin">Admin</span></td>
+                                    <td>Full access. Manage projects, collaborators, archives, public visibility, FOIA tolling, GovQA push, and Project Online imports.</td>
+                                </tr>
+                                <tr>
+                                    <td><span class="role-pill role-director">Director</span></td>
+                                    <td>Read all dashboards and projects. Create projects, claim, collaborate, transition, comment, and attach.</td>
+                                </tr>
+                                <tr>
+                                    <td><span class="role-pill role-viewer">Viewer</span></td>
+                                    <td>Read-only across the dashboard and projects assigned to or shared with you.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <p class="small text-muted mt-3 mb-0">Suite-level <code>system_admin</code> inherits Admin behavior on Helm.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- ============================================================== -->
+        <!-- GETTING STARTED -->
+        <!-- ============================================================== -->
+        <section id="getting-started" class="manual-section mb-5">
+            <h2 class="fw-bold mb-3"><i class="bi bi-rocket-takeoff me-2 text-primary"></i>Getting Started</h2>
+            <div class="card border-0 shadow-sm mb-3">
+                <div class="card-body p-4 lh-lg">
+                    <h5 class="fw-bold"><i class="bi bi-box-arrow-in-right me-2 text-primary"></i>Signing in</h5>
+                    <div class="workflow-step">
+                        <span class="step-num">1</span>
+                        <span>From any DockLabs product, click <strong>Helm</strong> in the fleet switcher, or visit <code>https://helm.docklabs.ai/</code>.</span>
+                    </div>
+                    <div class="workflow-step">
+                        <span class="step-num">2</span>
+                        <span>Click <strong>Sign in with DockLabs</strong> (the suite OIDC button).</span>
+                    </div>
+                    <div class="workflow-step">
+                        <span class="step-num">3</span>
+                        <span>You'll land on <code>/dashboard/</code>.</span>
+                    </div>
+                    <div class="alert alert-info border-0 small mt-3 mb-0">
+                        <i class="bi bi-info-circle me-2"></i>
+                        If you're already signed in to another DockLabs product, the redirect is seamless — no second login form.
+                    </div>
+                </div>
+            </div>
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-4 lh-lg">
+                    <h5 class="fw-bold"><i class="bi bi-eye me-2 text-primary"></i>What you'll see first</h5>
+                    <ul class="mb-0">
+                        <li><strong>Today tab</strong> — your personal inbox: My Work, Awaiting Me, and Alerts.</li>
+                        <li><strong>Across the suite tab</strong> — fleet-wide metrics and drill-downs.</li>
+                    </ul>
+                    <p class="small text-muted mt-2 mb-0">The active tab is sticky via the <code>?tab=today|suite</code> query string, so reloads land you where you left off.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- ============================================================== -->
+        <!-- TODAY TAB -->
+        <!-- ============================================================== -->
+        <section id="today" class="manual-section mb-5">
+            <h2 class="fw-bold mb-3"><i class="bi bi-sun me-2 text-primary"></i>Dashboard — Today Tab</h2>
+            <p>The Today tab is your personal stand-up view. Three columns:</p>
+
+            <h3 class="fw-bold mt-4">1. My Work</h3>
+            <p>A deadline rail of every open task assigned to you, grouped:</p>
+            <ul>
+                <li><strong>Overdue</strong> — past due, not done.</li>
+                <li><strong>Today</strong> — due today.</li>
+                <li><strong>This week</strong> — due in the next 7 days.</li>
+                <li><strong>Upcoming</strong> — anything later.</li>
+            </ul>
+            <p class="small text-muted">The same predicate powers <code>/tasks/</code> — the two surfaces never drift apart.</p>
+
+            <h3 class="fw-bold mt-4">2. Awaiting Me</h3>
+            <p>Cross-suite inbox. For each peer product where you have a role, Helm queries <code>/api/v1/helm-feed/inbox/</code> and lists items where <em>you</em> are the gating dependency:</p>
+            <div class="card border-0 shadow-sm mb-3">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-sm mb-0">
+                            <thead>
+                                <tr><th>Peer</th><th>What appears here</th></tr>
+                            </thead>
+                            <tbody>
+                                <tr><td><strong>Manifest</strong></td><td>Active signing steps where you are the signer and the packet is in progress.</td></tr>
+                                <tr><td><strong>Harbor</strong></td><td>Open review assignments and processing assignments.</td></tr>
+                                <tr><td><strong>Admiralty</strong></td><td>FOIA requests assigned to you in an open status, statutory deadline shown as the due date.</td></tr>
+                                <tr><td><strong>Purser</strong></td><td>Submissions you can review (your program, not yet reviewed).</td></tr>
+                                <tr><td><strong>Bounty</strong></td><td>New high-relevance opportunity matches for you.</td></tr>
+                                <tr><td><strong>Beacon</strong></td><td>Keep-in-touch reminders due in 3 days; pending company approvals you own.</td></tr>
+                                <tr><td><strong>Lookout</strong></td><td>Tracked bills you're driving (researching, drafting testimony, collaborating).</td></tr>
+                                <tr><td><strong>Yeoman</strong></td><td>Speaking invitations assigned, principaled, or delegated to you.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <p class="small text-muted">If a peer hasn't enabled the per-user endpoint yet, Helm falls back to a coarse aggregate count and shows a <code>~N</code> badge with a tooltip. Per-user-per-peer cache is 60s; fetches run in parallel (8 workers max).</p>
+
+            <h3 class="fw-bold mt-4">3. Alerts</h3>
+            <ul class="mb-0">
+                <li><strong>Local notifications</strong> — anything from Helm's own <code>Notification</code> table.</li>
+                <li><strong>Aggregated unread notifications</strong> — unread counts surfaced by each peer's inbox payload.</li>
+                <li><strong>Ops canaries</strong> (staff only) — pulled live from <code>/api/v1/metrics/</code>.</li>
+            </ul>
+        </section>
+
+        <!-- ============================================================== -->
+        <!-- ACROSS THE SUITE -->
+        <!-- ============================================================== -->
+        <section id="suite" class="manual-section mb-5">
+            <h2 class="fw-bold mb-3"><i class="bi bi-grid me-2 text-primary"></i>Dashboard — Across the Suite</h2>
+            <p>The executive view. Renders:</p>
+            <ul>
+                <li><strong>Period bar</strong> — pick a window (current period, last period, custom).</li>
+                <li><strong>Fleet metric grid</strong> — one card per product, primary KPI plus a sparkline. Click <strong>expand</strong> to load a drill-down panel via htmx.</li>
+                <li><strong>Fleet-aggregate action queue</strong> — same items as Awaiting Me, rolled up across users for an org-wide view.</li>
+                <li><strong>Fleet-aggregate alerts</strong> — peer alerts plus ops canaries.</li>
+                <li><strong>Watch list</strong> — pinned products / metrics you've bookmarked.</li>
+            </ul>
+            <h3 class="fw-bold mt-4">Drill-down panels</h3>
+            <p>Each per-product drill-down shows the full metric card, open action items, active alerts, and the data freshness timestamp (with a stale-data warning if the snapshot is older than the cache window). Drill-downs are read-only — to act on an item, click through into the peer product.</p>
+        </section>
+
+        <!-- ============================================================== -->
+        <!-- PROJECTS -->
+        <!-- ============================================================== -->
+        <section id="projects" class="manual-section mb-5">
+            <h2 class="fw-bold mb-3"><i class="bi bi-folder me-2 text-primary"></i>Projects</h2>
+            <p><code>/tasks/projects/</code> — Helm's container for any work that has more than one task and more than one person. Each project carries a <strong>kind</strong> (Standard, FOIA, or CIP), a <strong>status</strong>, a <strong>lead</strong> (set via Claim), <strong>collaborators</strong>, <strong>tasks</strong>, <strong>notes</strong>, <strong>attachments</strong>, full status history, and a <strong>public ID</strong> for transparency views.</p>
+
+            <h3 class="fw-bold mt-4">Lifecycle</h3>
+            <p>Helm follows the DockLabs Project Lifecycle Standard:</p>
+            <p class="small text-muted">claim → invite collaborators → diligence (notes + attachments) → stage progression → optional handoff to Manifest for signing → signed-doc roundtrip → optional downstream export</p>
+            <div class="card bg-light border-0 mb-3">
+                <div class="card-body small">
+<pre class="mb-0">active ⇄ on_hold
+active/on_hold → completed/cancelled
+completed/cancelled → archived (terminal)
+archived → active/completed/cancelled (unarchive restores prior state)</pre>
+                </div>
+            </div>
+            <p class="small text-muted">Pause and Cancel require a comment. Archive does not. Unarchive restores the project to whatever terminal status it had before (recorded in <code>previous_terminal_status</code>).</p>
+
+            <h3 class="fw-bold mt-4">Creating a project</h3>
+            <div class="workflow-step"><span class="step-num">1</span><span>Click <strong>Projects → New project</strong>.</span></div>
+            <div class="workflow-step"><span class="step-num">2</span><span>Pick a <strong>kind</strong> (Standard, FOIA, or CIP). FOIA and CIP unlock kind-specific fields.</span></div>
+            <div class="workflow-step"><span class="step-num">3</span><span>Set name, description, color, and target end date.</span></div>
+            <div class="workflow-step"><span class="step-num">4</span><span>Save, then click <strong>Claim</strong> to make yourself the LEAD, and <strong>Invite collaborators</strong> to add the team.</span></div>
+        </section>
+
+        <!-- ============================================================== -->
+        <!-- TASKS -->
+        <!-- ============================================================== -->
+        <section id="tasks" class="manual-section mb-5">
+            <h2 class="fw-bold mb-3"><i class="bi bi-check2-square me-2 text-primary"></i>Tasks</h2>
+            <p>Tasks live inside a project. Each carries a <strong>title</strong>, <strong>description</strong>, <strong>status</strong>, <strong>priority</strong>, <strong>assignee</strong>, <strong>due date</strong>, manual <strong>position</strong> (sort order), and full status history.</p>
+
+            <h3 class="fw-bold mt-4">Workflow transitions</h3>
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-sm mb-0">
+                            <thead>
+                                <tr><th>From</th><th>To</th><th>Action</th><th>Required</th></tr>
+                            </thead>
+                            <tbody>
+                                <tr><td>todo</td><td>in_progress</td><td>Start</td><td>—</td></tr>
+                                <tr><td>todo</td><td>done</td><td>Skip to done</td><td>—</td></tr>
+                                <tr><td>in_progress</td><td>blocked</td><td>Block</td><td>comment</td></tr>
+                                <tr><td>blocked</td><td>in_progress</td><td>Unblock</td><td>—</td></tr>
+                                <tr><td>in_progress</td><td>done</td><td>Complete</td><td>—</td></tr>
+                                <tr><td>done</td><td>in_progress</td><td>Reopen</td><td>—</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <p class="small text-muted mt-3">Status changes fire <code>task_status_changed</code> notifications to the task assignee and project collaborators.</p>
+
+            <h3 class="fw-bold mt-4">Due-date notifications</h3>
+            <p>A daily cron (<code>helm-notify-due-tasks</code>, 09:00 UTC) fires:</p>
+            <ul class="mb-0">
+                <li><code>task_due_soon</code> — 24 hours before due_date.</li>
+                <li><code>task_overdue</code> — once when the task crosses due_date.</li>
+            </ul>
+            <p class="small text-muted mt-2 mb-0">Both are idempotent (24-hour cooldown stamped on the task), so re-running the job won't spam.</p>
+        </section>
+
+        <!-- ============================================================== -->
+        <!-- COLLABORATION -->
+        <!-- ============================================================== -->
+        <section id="collab" class="manual-section mb-5">
+            <h2 class="fw-bold mb-3"><i class="bi bi-people me-2 text-primary"></i>Collaboration</h2>
+
+            <h3 class="fw-bold mt-2">Per-project roles</h3>
+            <div class="card border-0 shadow-sm mb-3">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-sm mb-0">
+                            <thead>
+                                <tr><th>Role</th><th>What they can do</th></tr>
+                            </thead>
+                            <tbody>
+                                <tr><td><span class="role-pill collab-lead">LEAD</span></td><td>Drive the project. Transition status, archive/unarchive, manage collaborators, toggle public visibility, run AI summary, push to GovQA / Manifest.</td></tr>
+                                <tr><td><span class="role-pill collab-contributor">CONTRIBUTOR</span></td><td>Create and update tasks, add notes, attach files, comment.</td></tr>
+                                <tr><td><span class="role-pill collab-reviewer">REVIEWER</span></td><td>Read everything; comment on notes and attachments.</td></tr>
+                                <tr><td><span class="role-pill collab-observer">OBSERVER</span></td><td>Read-only access — useful for executive visibility without blast radius.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <p class="small text-muted">Only LEAD / CONTRIBUTOR / REVIEWER / OBSERVER are valid. Custom role names are not supported (suite-wide convention).</p>
+
+            <h3 class="fw-bold mt-4">Notes &amp; attachments</h3>
+            <ul class="mb-0">
+                <li><strong>Notes</strong> — internal staff-only by default. Mark a note "external" to expose it on the public transparency view.</li>
+                <li><strong>Attachments</strong> — drag-and-drop uploads. Each carries a <strong>source</strong> (manual upload, manifest_signed, etc.) and a <strong>visibility</strong> flag. Files attached as <code>manifest_signed</code> are produced automatically by the Manifest signing roundtrip.</li>
+            </ul>
+        </section>
+
+        <!-- ============================================================== -->
+        <!-- FOIA -->
+        <!-- ============================================================== -->
+        <section id="foia" class="manual-section mb-5">
+            <h2 class="fw-bold mb-3"><i class="bi bi-stopwatch me-2 text-primary"></i>FOIA Projects</h2>
+            <p>A project with <strong>kind = FOIA</strong> unlocks statutory-clock fields and a tolling control bar.</p>
+
+            <h3 class="fw-bold mt-4">Statutory clock</h3>
+            <div class="card border-0 shadow-sm mb-3">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-sm mb-0">
+                            <thead>
+                                <tr><th>Field</th><th>Meaning</th></tr>
+                            </thead>
+                            <tbody>
+                                <tr><td><strong>Jurisdiction</strong></td><td>Connecticut (CGS §1-206 — 4 business days to acknowledge) is the default. Federal (5 USC 552 — 20 business days) is also supported.</td></tr>
+                                <tr><td><strong>Received at</strong></td><td>The date the request was received. Triggers the clock.</td></tr>
+                                <tr><td><strong>Statutory deadline</strong></td><td>Computed deadline. Recomputes when received_at, jurisdiction, or tolling changes. Indexed; visible as a countdown badge on the project card and Awaiting Me column.</td></tr>
+                                <tr><td><strong>Tolled at / Tolled until</strong></td><td>Pause window. The deadline shifts forward by the tolled duration.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <h3 class="fw-bold mt-4">Tolling</h3>
+            <p>LEAD users can pause and resume the clock:</p>
+            <ul>
+                <li><strong>Toll</strong> — record the start of a tolling period (e.g. waiting on a fee agreement, requester clarification). Surface a label and end date on submission.</li>
+                <li><strong>Untoll</strong> — resume the clock. The deadline recomputes, advancing forward by the tolled duration.</li>
+            </ul>
+            <p class="small text-muted">Every toll/untoll is logged in status history.</p>
+
+            <h3 class="fw-bold mt-4">Granicus GovQA push</h3>
+            <p class="mb-0">If <code>GRANICUS_GOVQA_URL</code> and <code>GRANICUS_GOVQA_API_KEY</code> are set, LEAD users see a <strong>Push to GovQA</strong> button that creates / updates the matching record in Granicus GovQA. The button is hidden when the integration isn't configured — there are no silent no-ops.</p>
+        </section>
+
+        <!-- ============================================================== -->
+        <!-- CIP -->
+        <!-- ============================================================== -->
+        <section id="cip" class="manual-section mb-5">
+            <h2 class="fw-bold mb-3"><i class="bi bi-bank me-2 text-primary"></i>Capital Improvement Plan (CIP) Projects</h2>
+            <p>A project with <strong>kind = CIP</strong> unlocks fund sources and federal compliance flags.</p>
+
+            <h3 class="fw-bold mt-4">Fund sources</h3>
+            <p>A structured list of <code>{source, amount_cents, label}</code> entries. Sources include:</p>
+            <ul>
+                <li>ARPA — American Rescue Plan Act</li>
+                <li>IIJA — Infrastructure Investment and Jobs Act</li>
+                <li>IRA — Inflation Reduction Act</li>
+                <li>BEAD — Broadband Equity, Access, and Deployment</li>
+                <li>SLCGP — State and Local Cybersecurity Grant</li>
+                <li>CDBG — Community Development Block Grant</li>
+                <li>General Obligation Bond / Revenue Bond</li>
+                <li>State Match / Local Match / General Fund</li>
+            </ul>
+            <p class="small text-muted">Totals per project are visible on the public transparency page when public visibility is enabled.</p>
+
+            <h3 class="fw-bold mt-4">Federal compliance flags</h3>
+            <ul class="mb-0">
+                <li><strong>Davis-Bacon</strong> — federal construction prevailing-wage requirements apply.</li>
+                <li><strong>Build America, Buy America (BABA)</strong> — domestic procurement applies.</li>
+                <li><strong>NEPA</strong> — federal environmental review required.</li>
+                <li><strong>Environmental review</strong> — state or local environmental review required.</li>
+            </ul>
+            <p class="small text-muted mt-2">These are advisory flags. They document audit posture; they don't enforce blocking rules.</p>
+        </section>
+
+        <!-- ============================================================== -->
+        <!-- PUBLIC TRANSPARENCY -->
+        <!-- ============================================================== -->
+        <section id="public" class="manual-section mb-5">
+            <h2 class="fw-bold mb-3"><i class="bi bi-globe me-2 text-primary"></i>Public Transparency</h2>
+            <p>Each project has a <code>public_id</code> (UUID) and a <code>public_visibility</code> flag (default <strong>private</strong>). LEAD-only toggle.</p>
+            <p>When <strong>public</strong>, the project is reachable at <code>/p/&lt;public_id&gt;/</code> to anyone, no authentication required, and renders:</p>
+            <ul>
+                <li>Project name, status, and target dates.</li>
+                <li>Task completion percentage.</li>
+                <li>Fund sources and totals (CIP only).</li>
+                <li>The FOIA statutory deadline countdown (FOIA only).</li>
+            </ul>
+            <div class="alert alert-warning border-0 small mb-0">
+                <i class="bi bi-exclamation-triangle me-2"></i>
+                The public view does <strong>not</strong> expose notes, attachments, collaborators, comments, or any PII. It is a transparency primitive, not a sharing primitive.
+            </div>
+        </section>
+
+        <!-- ============================================================== -->
+        <!-- CALENDAR -->
+        <!-- ============================================================== -->
+        <section id="calendar" class="manual-section mb-5">
+            <h2 class="fw-bold mb-3"><i class="bi bi-calendar2-week me-2 text-primary"></i>Calendar</h2>
+            <p><code>/tasks/calendar/</code> — FullCalendar-mounted view of project target end dates, task due dates, and FOIA statutory deadlines.</p>
+            <h3 class="fw-bold mt-4">iCal subscribe</h3>
+            <p class="mb-0"><code>/tasks/calendar.ics</code> — login-required iCal feed of the same items, so you can subscribe from Outlook / Apple Calendar / Google Calendar. The feed is per-user; deadlines on projects you can't see won't appear.</p>
+        </section>
+
+        <!-- ============================================================== -->
+        <!-- NOTIFICATIONS -->
+        <!-- ============================================================== -->
+        <section id="notifications" class="manual-section mb-5">
+            <h2 class="fw-bold mb-3"><i class="bi bi-bell me-2 text-primary"></i>Notifications</h2>
+            <p>Helm's notification catalog (event types you may receive):</p>
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-sm mb-0">
+                            <thead>
+                                <tr><th>Event</th><th>When it fires</th></tr>
+                            </thead>
+                            <tbody>
+                                <tr><td><code>helm_project_assigned</code></td><td>You were claimed as LEAD on a project.</td></tr>
+                                <tr><td><code>helm_project_status_changed</code></td><td>A project you're on transitioned.</td></tr>
+                                <tr><td><code>helm_collaborator_invited</code></td><td>You were added to a project.</td></tr>
+                                <tr><td><code>helm_task_assigned</code></td><td>A task in your project was assigned to you.</td></tr>
+                                <tr><td><code>helm_task_status_changed</code></td><td>A task you're on changed status.</td></tr>
+                                <tr><td><code>task_due_soon</code></td><td>A task you own is due in 24 hours.</td></tr>
+                                <tr><td><code>task_overdue</code></td><td>A task you own is past due.</td></tr>
+                                <tr><td><code>helm_foia_deadline_warning</code></td><td>A FOIA project you're on is approaching its statutory deadline.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <p class="small text-muted mt-3 mb-0">Channels (in-app + email) are user-configurable at <a href="/notifications/preferences/">/notifications/preferences/</a>. The link is in the sidebar user-menu dropdown.</p>
+        </section>
+
+        <!-- ============================================================== -->
+        <!-- EXPORTS / AI -->
+        <!-- ============================================================== -->
+        <section id="exports" class="manual-section mb-5">
+            <h2 class="fw-bold mb-3"><i class="bi bi-download me-2 text-primary"></i>Exports &amp; AI</h2>
+
+            <h3 class="fw-bold mt-2">Per-project exports</h3>
+            <ul>
+                <li><strong>CSV</strong> — <code>/tasks/projects/&lt;slug&gt;/export.csv</code>. Task list with status, priority, assignee, dates.</li>
+                <li><strong>PDF</strong> — <code>/tasks/projects/&lt;slug&gt;/export.pdf</code>. Status report, branded, suitable for stakeholder distribution.</li>
+            </ul>
+
+            <h3 class="fw-bold mt-4">AI summary</h3>
+            <p>From a project page, click <strong>Summarize</strong>. Helm calls Claude to produce a short narrative covering current status, recent activity, blockers, and upcoming deadlines.</p>
+            <p class="small text-muted">Summaries are cached. The first request returns the cached version; click <strong>Refresh</strong> to regenerate. Each summary is stamped with the model version and the time it was generated.</p>
+
+            <h3 class="fw-bold mt-4">Project Online (PWA) import</h3>
+            <p class="mb-0">Staff-only wizard at <code>/tasks/import/project-online/</code> for ingesting projects from a Microsoft Project Online instance into Helm. Maps PWA fields to Helm projects + tasks; preserves status and assignees where matchable.</p>
+        </section>
+
+        <!-- ============================================================== -->
+        <!-- HEALTH -->
+        <!-- ============================================================== -->
+        <section id="health" class="manual-section mb-5">
+            <h2 class="fw-bold mb-3"><i class="bi bi-activity me-2 text-primary"></i>Scheduled Jobs &amp; Health Metrics</h2>
+
+            <h3 class="fw-bold mt-2">Scheduled jobs dashboard</h3>
+            <p>Staff-only at <a href="/scheduling/">/scheduling/</a>. One row per scheduled command in this service, with the cron expression (display only — the scheduler is external), last run, status, recent-24-runs sparkline, and a per-job detail page showing the last 100 runs.</p>
+            <p>Helm's registered jobs:</p>
+            <ul>
+                <li><code>helm-notify-due-tasks</code> — daily, 09:00 UTC. Fires <code>task_due_soon</code> and <code>task_overdue</code>. Idempotent.</li>
+            </ul>
+            <p class="small text-muted">The <code>enabled</code> flag is <strong>display-only</strong> — toggling it does not pause the underlying cron.</p>
+
+            <h3 class="fw-bold mt-4">Operational metrics</h3>
+            <p><code>GET /api/v1/metrics/</code> returns JSON counters. Auth: staff session OR <code>Authorization: Bearer $HELM_METRICS_TOKEN</code> (for external pollers).</p>
+            <p>The four canary booleans under <code>flags</code>:</p>
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-sm mb-0">
+                            <thead>
+                                <tr><th>Flag</th><th>What flipping <code>true</code> means</th></tr>
+                            </thead>
+                            <tbody>
+                                <tr><td><code>audit_silent_24h</code></td><td>No <code>AuditLog</code> rows written in 24 hours. The compliance trail has gone silent.</td></tr>
+                                <tr><td><code>cron_silent_24h</code></td><td>No <code>CommandRun</code> rows in 24 hours — the scheduler isn't firing.</td></tr>
+                                <tr><td><code>cron_failures_24h</code></td><td>At least one scheduled job errored in the last 24 hours.</td></tr>
+                                <tr><td><code>notifications_failing</code></td><td>At least one delivery failed.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <p class="small text-muted mt-3 mb-0"><code>flags.healthy: false</code> is the simplest top-level alert.</p>
+        </section>
+
+        <!-- ============================================================== -->
+        <!-- STATUS REFERENCE -->
+        <!-- ============================================================== -->
+        <section id="statuses" class="manual-section mb-5">
+            <h2 class="fw-bold mb-3"><i class="bi bi-diagram-3 me-2 text-primary"></i>Status Reference</h2>
+
+            <h3 class="fw-bold mt-2">Project status</h3>
+            <div class="status-flow my-2">
+                <span class="badge bg-primary">Active</span>
+                <i class="bi bi-arrow-left-right"></i>
+                <span class="badge bg-warning text-dark">On hold</span>
+                <i class="bi bi-arrow-right"></i>
+                <span class="badge bg-success">Completed</span>
+                <span class="text-muted">/</span>
+                <span class="badge bg-secondary">Cancelled</span>
+                <i class="bi bi-arrow-right"></i>
+                <span class="badge bg-dark">Archived</span>
+            </div>
+
+            <h3 class="fw-bold mt-4">Task status</h3>
+            <div class="status-flow my-2">
+                <span class="badge bg-secondary">To Do</span>
+                <i class="bi bi-arrow-right"></i>
+                <span class="badge bg-primary">In Progress</span>
+                <i class="bi bi-arrow-left-right"></i>
+                <span class="badge bg-warning text-dark">Blocked</span>
+                <span class="text-muted mx-2">→</span>
+                <span class="badge bg-success">Done</span>
+            </div>
+
+            <h3 class="fw-bold mt-4">FOIA jurisdiction</h3>
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-sm mb-0">
+                            <thead><tr><th>Jurisdiction</th><th>Statute</th><th>Initial window</th></tr></thead>
+                            <tbody>
+                                <tr><td>Connecticut</td><td>CGS §1-206</td><td>4 business days to acknowledge</td></tr>
+                                <tr><td>Federal</td><td>5 USC 552</td><td>20 business days</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ============================================================== -->
+        <!-- KEYBOARD SHORTCUTS -->
+        <!-- ============================================================== -->
+        <section id="shortcuts" class="manual-section mb-5">
+            <h2 class="fw-bold mb-3"><i class="bi bi-keyboard me-2 text-primary"></i>Keyboard Shortcuts</h2>
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center gap-3">
+                        <kbd>⌘K</kbd> <span class="text-muted">/</span> <kbd>Ctrl+K</kbd>
+                        <span>Open the suite-wide search modal.</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Footer / next steps -->
+        <div class="card border-0 shadow-sm mt-4">
+            <div class="card-body text-center p-4">
+                <h5 class="fw-bold mb-2">Need a quick answer?</h5>
+                <p class="text-muted mb-3">The FAQ covers the most common questions in 14 short cards.</p>
+                <a href="{% url 'help' %}" class="btn btn-outline-primary me-2">
+                    <i class="bi bi-question-circle me-1"></i> Help &amp; FAQ
+                </a>
+                <a href="mailto:info@docklabs.ai" class="btn btn-primary">
+                    <i class="bi bi-envelope me-1"></i> Contact Support
+                </a>
+            </div>
+        </div>
+
+    </div>
+</div>
+</div>
+{% endblock %}

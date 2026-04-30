@@ -22,6 +22,9 @@ admin.site.index_title = _('Executive Dashboard')
 urlpatterns = [
     # Support (shared keel page — linked from 500.html)
     path('support/', TemplateView.as_view(template_name='keel/support.html'), name='support'),
+    # User-facing help & manual
+    path('help/', TemplateView.as_view(template_name='help.html'), name='help'),
+    path('manual/', TemplateView.as_view(template_name='user_manual.html'), name='manual'),
     path('robots.txt', robots_txt, name='robots_txt'),
     path('favicon.ico', favicon_view, name='favicon'),
     path('health/', health_check, name='health_check'),

@@ -1,0 +1,377 @@
+{% extends "base.html" %}
+
+{% block page_title %}Help & FAQ{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+<div class="row justify-content-center">
+    <div class="col-lg-9">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1 class="fw-bold mb-1">Help &amp; Frequently Asked Questions</h1>
+                <p class="text-muted mb-0">Quick answers about using Helm. For the full reference, see the <a href="{% url 'manual' %}">User Manual</a>.</p>
+            </div>
+            <a href="{% url 'manual' %}" class="btn btn-outline-primary btn-sm" title="Open the full user manual">
+                <i class="bi bi-book me-1"></i> User Manual
+            </a>
+        </div>
+
+        <div class="accordion" id="faqAccordion">
+
+            <!-- Q1: What is Helm -->
+            <div class="accordion-item border-0 shadow-sm mb-3 rounded">
+                <h2 class="accordion-header" id="faqHeading1">
+                    <button class="accordion-button collapsed fw-semibold" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#faqCollapse1"
+                            aria-expanded="false" aria-controls="faqCollapse1">
+                        <i class="bi bi-hexagon me-2 text-primary"></i>
+                        What is Helm?
+                    </button>
+                </h2>
+                <div id="faqCollapse1" class="accordion-collapse collapse"
+                     aria-labelledby="faqHeading1" data-bs-parent="#faqAccordion">
+                    <div class="accordion-body lh-lg">
+                        <p>Helm is the executive dashboard for the DockLabs suite. It rolls up real-time metrics, action items, and alerts from every peer product (Admiralty, Beacon, Bounty, Harbor, Lookout, Manifest, Purser, Yeoman) into a single view.</p>
+                        <p class="mb-0">Helm also hosts a lightweight project-management surface (<strong>Tasks</strong>) for cross-cutting work that doesn't fit any single peer product — interagency coordination, FOIA case management, and capital improvement plans.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Q2: Today vs Across the suite -->
+            <div class="accordion-item border-0 shadow-sm mb-3 rounded">
+                <h2 class="accordion-header" id="faqHeading2">
+                    <button class="accordion-button collapsed fw-semibold" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#faqCollapse2"
+                            aria-expanded="false" aria-controls="faqCollapse2">
+                        <i class="bi bi-layout-split me-2 text-primary"></i>
+                        What's the difference between the Today and Across the suite tabs?
+                    </button>
+                </h2>
+                <div id="faqCollapse2" class="accordion-collapse collapse"
+                     aria-labelledby="faqHeading2" data-bs-parent="#faqAccordion">
+                    <div class="accordion-body lh-lg">
+                        <p><strong>Today</strong> is your personal stand-up. Three columns:</p>
+                        <ul>
+                            <li><strong>My Work</strong> — your open tasks grouped Overdue / Today / This week / Upcoming.</li>
+                            <li><strong>Awaiting Me</strong> — items across the suite where <em>you</em> are the gating dependency (signing steps in Manifest, FOIA assignments in Admiralty, review queues in Harbor or Purser, etc.).</li>
+                            <li><strong>Alerts</strong> — local notifications, unread peer notifications, and (staff only) ops canaries.</li>
+                        </ul>
+                        <p class="mb-0"><strong>Across the suite</strong> is the executive view: fleet metric cards with sparklines, an aggregate action queue, aggregate alerts, and per-product drill-down panels you can expand inline.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Q3: How does Awaiting Me work -->
+            <div class="accordion-item border-0 shadow-sm mb-3 rounded">
+                <h2 class="accordion-header" id="faqHeading3">
+                    <button class="accordion-button collapsed fw-semibold" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#faqCollapse3"
+                            aria-expanded="false" aria-controls="faqCollapse3">
+                        <i class="bi bi-inbox me-2 text-primary"></i>
+                        How does the Awaiting Me column know what's mine?
+                    </button>
+                </h2>
+                <div id="faqCollapse3" class="accordion-collapse collapse"
+                     aria-labelledby="faqHeading3" data-bs-parent="#faqAccordion">
+                    <div class="accordion-body lh-lg">
+                        <p>Helm asks each peer product through a per-user inbox endpoint (<code>/api/v1/helm-feed/inbox/</code>). The peer resolves your DockLabs identity to its local user record and returns the items where you are the open assignee, signer, reviewer, or owner — with deep links and due dates.</p>
+                        <p class="mb-0">If a peer hasn't enabled the per-user endpoint yet (or it's offline), Helm falls back to a coarse count from that peer's aggregate feed and renders a <code>~N</code> badge with a tooltip. Nothing else is affected.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Q4: How do I claim a project -->
+            <div class="accordion-item border-0 shadow-sm mb-3 rounded">
+                <h2 class="accordion-header" id="faqHeading4">
+                    <button class="accordion-button collapsed fw-semibold" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#faqCollapse4"
+                            aria-expanded="false" aria-controls="faqCollapse4">
+                        <i class="bi bi-flag me-2 text-primary"></i>
+                        How do I claim a project and invite collaborators?
+                    </button>
+                </h2>
+                <div id="faqCollapse4" class="accordion-collapse collapse"
+                     aria-labelledby="faqHeading4" data-bs-parent="#faqAccordion">
+                    <div class="accordion-body lh-lg">
+                        <ol>
+                            <li>Open <strong>Tasks → Projects</strong>, click <strong>New project</strong>, pick a kind (Standard, FOIA, or CIP), set the name and target date.</li>
+                            <li>On the project page, click <strong>Claim</strong>. You become the LEAD.</li>
+                            <li>Click <strong>Collaborators</strong>, pick a user (or enter an email), assign a role: LEAD, CONTRIBUTOR, REVIEWER, or OBSERVER.</li>
+                            <li>The invitee receives a <code>helm_collaborator_invited</code> notification.</li>
+                        </ol>
+                        <p class="mb-0">Only LEAD and CONTRIBUTOR can edit tasks. REVIEWER can comment but not edit. OBSERVER is read-only.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Q5: Project statuses -->
+            <div class="accordion-item border-0 shadow-sm mb-3 rounded">
+                <h2 class="accordion-header" id="faqHeading5">
+                    <button class="accordion-button collapsed fw-semibold" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#faqCollapse5"
+                            aria-expanded="false" aria-controls="faqCollapse5">
+                        <i class="bi bi-diagram-3 me-2 text-primary"></i>
+                        What do the project status values mean?
+                    </button>
+                </h2>
+                <div id="faqCollapse5" class="accordion-collapse collapse"
+                     aria-labelledby="faqHeading5" data-bs-parent="#faqAccordion">
+                    <div class="accordion-body lh-lg">
+                        <dl class="row mb-0">
+                            <dt class="col-sm-3"><span class="badge bg-primary">Active</span></dt>
+                            <dd class="col-sm-9">Open, work in progress.</dd>
+
+                            <dt class="col-sm-3"><span class="badge bg-warning text-dark">On hold</span></dt>
+                            <dd class="col-sm-9">Paused. Comment required to enter; resume returns to Active.</dd>
+
+                            <dt class="col-sm-3"><span class="badge bg-success">Completed</span></dt>
+                            <dd class="col-sm-9">Successfully wrapped.</dd>
+
+                            <dt class="col-sm-3"><span class="badge bg-secondary">Cancelled</span></dt>
+                            <dd class="col-sm-9">Closed without completion. Comment required.</dd>
+
+                            <dt class="col-sm-3"><span class="badge bg-dark">Archived</span></dt>
+                            <dd class="col-sm-9">Terminal. Hidden from the default project list. Restorable to its prior terminal status.</dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Q6: FOIA tolling -->
+            <div class="accordion-item border-0 shadow-sm mb-3 rounded">
+                <h2 class="accordion-header" id="faqHeading6">
+                    <button class="accordion-button collapsed fw-semibold" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#faqCollapse6"
+                            aria-expanded="false" aria-controls="faqCollapse6">
+                        <i class="bi bi-stopwatch me-2 text-primary"></i>
+                        How does FOIA tolling work?
+                    </button>
+                </h2>
+                <div id="faqCollapse6" class="accordion-collapse collapse"
+                     aria-labelledby="faqHeading6" data-bs-parent="#faqAccordion">
+                    <div class="accordion-body lh-lg">
+                        <p>Projects with <strong>kind = FOIA</strong> carry a statutory clock. Connecticut (CGS §1-206 — 4 business days to acknowledge) is the default; Federal (5 USC 552 — 20 business days) is also supported.</p>
+                        <p>The deadline is computed from the <strong>received_at</strong> date, the jurisdiction, and any tolling windows you record.</p>
+                        <ul class="mb-0">
+                            <li><strong>Toll</strong> pauses the clock — use when waiting on a fee agreement or requester clarification.</li>
+                            <li><strong>Untoll</strong> resumes it. The deadline shifts forward by the tolled duration and is recomputed automatically.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Q7: CIP -->
+            <div class="accordion-item border-0 shadow-sm mb-3 rounded">
+                <h2 class="accordion-header" id="faqHeading7">
+                    <button class="accordion-button collapsed fw-semibold" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#faqCollapse7"
+                            aria-expanded="false" aria-controls="faqCollapse7">
+                        <i class="bi bi-bank me-2 text-primary"></i>
+                        What's a CIP project?
+                    </button>
+                </h2>
+                <div id="faqCollapse7" class="accordion-collapse collapse"
+                     aria-labelledby="faqHeading7" data-bs-parent="#faqAccordion">
+                    <div class="accordion-body lh-lg">
+                        <p>A <strong>Capital Improvement Plan (CIP)</strong> project tracks federal-fund-tied infrastructure work. The kind unlocks:</p>
+                        <ul>
+                            <li><strong>Fund sources</strong> — structured entries for ARPA, IIJA, IRA, BEAD, SLCGP, CDBG, GO Bond, Revenue Bond, and match dollars.</li>
+                            <li><strong>Federal compliance flags</strong> — Davis-Bacon, Build America Buy America, NEPA, and state/local environmental review.</li>
+                        </ul>
+                        <p class="mb-0">These flags are advisory — they document your audit posture. They don't enforce blocking rules.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Q8: Public transparency -->
+            <div class="accordion-item border-0 shadow-sm mb-3 rounded">
+                <h2 class="accordion-header" id="faqHeading8">
+                    <button class="accordion-button collapsed fw-semibold" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#faqCollapse8"
+                            aria-expanded="false" aria-controls="faqCollapse8">
+                        <i class="bi bi-globe me-2 text-primary"></i>
+                        What does Public Visibility expose?
+                    </button>
+                </h2>
+                <div id="faqCollapse8" class="accordion-collapse collapse"
+                     aria-labelledby="faqHeading8" data-bs-parent="#faqAccordion">
+                    <div class="accordion-body lh-lg">
+                        <p>When a project's visibility is set to <strong>Public</strong> (LEAD-only toggle), it becomes reachable at <code>/p/&lt;public_id&gt;/</code> with no authentication. The public page shows:</p>
+                        <ul>
+                            <li>Project name, status, and target dates.</li>
+                            <li>Task completion percentage.</li>
+                            <li>Fund sources and totals (CIP only).</li>
+                            <li>The FOIA statutory deadline countdown (FOIA only).</li>
+                        </ul>
+                        <p class="mb-0">It does <strong>not</strong> expose notes, attachments, collaborators, comments, or any PII.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Q9: Calendar / iCal -->
+            <div class="accordion-item border-0 shadow-sm mb-3 rounded">
+                <h2 class="accordion-header" id="faqHeading9">
+                    <button class="accordion-button collapsed fw-semibold" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#faqCollapse9"
+                            aria-expanded="false" aria-controls="faqCollapse9">
+                        <i class="bi bi-calendar2-week me-2 text-primary"></i>
+                        Can I subscribe to my deadlines from Outlook or Google Calendar?
+                    </button>
+                </h2>
+                <div id="faqCollapse9" class="accordion-collapse collapse"
+                     aria-labelledby="faqHeading9" data-bs-parent="#faqAccordion">
+                    <div class="accordion-body lh-lg">
+                        <p>Yes. Helm exposes a per-user iCal feed at <code>/tasks/calendar.ics</code>. It carries:</p>
+                        <ul>
+                            <li>Project target end dates.</li>
+                            <li>Task due dates assigned to or shared with you.</li>
+                            <li>FOIA statutory deadlines for projects you're on.</li>
+                        </ul>
+                        <p class="mb-0">The feed is login-required; deadlines on projects you can't see won't appear. Add the URL to your calendar app as a subscription.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Q10: AI summary -->
+            <div class="accordion-item border-0 shadow-sm mb-3 rounded">
+                <h2 class="accordion-header" id="faqHeading10">
+                    <button class="accordion-button collapsed fw-semibold" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#faqCollapse10"
+                            aria-expanded="false" aria-controls="faqCollapse10">
+                        <i class="bi bi-stars me-2 text-primary"></i>
+                        How does the AI project summary work?
+                    </button>
+                </h2>
+                <div id="faqCollapse10" class="accordion-collapse collapse"
+                     aria-labelledby="faqHeading10" data-bs-parent="#faqAccordion">
+                    <div class="accordion-body lh-lg">
+                        <p>From a project page, click <strong>Summarize</strong>. Helm calls Claude to produce a short narrative covering current status, recent activity, blockers, and upcoming deadlines.</p>
+                        <p class="mb-0">Summaries are cached. The first request returns the cached version; click <strong>Refresh</strong> to regenerate. Each summary is stamped with the model version and the time it was generated.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Q11: Notifications -->
+            <div class="accordion-item border-0 shadow-sm mb-3 rounded">
+                <h2 class="accordion-header" id="faqHeading11">
+                    <button class="accordion-button collapsed fw-semibold" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#faqCollapse11"
+                            aria-expanded="false" aria-controls="faqCollapse11">
+                        <i class="bi bi-bell me-2 text-primary"></i>
+                        How do I control which notifications I receive?
+                    </button>
+                </h2>
+                <div id="faqCollapse11" class="accordion-collapse collapse"
+                     aria-labelledby="faqHeading11" data-bs-parent="#faqAccordion">
+                    <div class="accordion-body lh-lg">
+                        <p>Open your sidebar profile dropdown and click <strong>Notification Preferences</strong> (or visit <a href="/notifications/preferences/">/notifications/preferences/</a>).</p>
+                        <p class="mb-0">For each event type, toggle the in-app and email channels independently. Critical alerts are delivered regardless of preferences.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Q12: Health metrics -->
+            <div class="accordion-item border-0 shadow-sm mb-3 rounded">
+                <h2 class="accordion-header" id="faqHeading12">
+                    <button class="accordion-button collapsed fw-semibold" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#faqCollapse12"
+                            aria-expanded="false" aria-controls="faqCollapse12">
+                        <i class="bi bi-activity me-2 text-primary"></i>
+                        Where do I see whether the system is healthy?
+                    </button>
+                </h2>
+                <div id="faqCollapse12" class="accordion-collapse collapse"
+                     aria-labelledby="faqHeading12" data-bs-parent="#faqAccordion">
+                    <div class="accordion-body lh-lg">
+                        <p>Staff users see four ops canaries on the dashboard's Alerts panel, pulled live from <code>/api/v1/metrics/</code>:</p>
+                        <ul>
+                            <li><code>audit_silent_24h</code> — no AuditLog rows in 24 hours.</li>
+                            <li><code>cron_silent_24h</code> — no scheduled-job runs in 24 hours.</li>
+                            <li><code>cron_failures_24h</code> — at least one job errored.</li>
+                            <li><code>notifications_failing</code> — at least one delivery failed.</li>
+                        </ul>
+                        <p class="mb-0">For per-job detail, visit the <a href="/scheduling/">Scheduled jobs dashboard</a>.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Q13: Roles -->
+            <div class="accordion-item border-0 shadow-sm mb-3 rounded">
+                <h2 class="accordion-header" id="faqHeading13">
+                    <button class="accordion-button collapsed fw-semibold" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#faqCollapse13"
+                            aria-expanded="false" aria-controls="faqCollapse13">
+                        <i class="bi bi-shield-lock me-2 text-primary"></i>
+                        What can each Helm role do?
+                    </button>
+                </h2>
+                <div id="faqCollapse13" class="accordion-collapse collapse"
+                     aria-labelledby="faqHeading13" data-bs-parent="#faqAccordion">
+                    <div class="accordion-body lh-lg">
+                        <dl class="row mb-0">
+                            <dt class="col-sm-3">Admin</dt>
+                            <dd class="col-sm-9">Full access. Manages projects, collaborators, archives, public visibility, FOIA tolling, GovQA push, and Project Online imports.</dd>
+                            <dt class="col-sm-3">Director</dt>
+                            <dd class="col-sm-9">Reads everything. Creates projects, claims, collaborates, transitions, comments, and attaches.</dd>
+                            <dt class="col-sm-3">Viewer</dt>
+                            <dd class="col-sm-9">Read-only across the dashboard and projects assigned or shared with them.</dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Q14: Support -->
+            <div class="accordion-item border-0 shadow-sm mb-3 rounded">
+                <h2 class="accordion-header" id="faqHeading14">
+                    <button class="accordion-button collapsed fw-semibold" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#faqCollapse14"
+                            aria-expanded="false" aria-controls="faqCollapse14">
+                        <i class="bi bi-headset me-2 text-primary"></i>
+                        How do I get help?
+                    </button>
+                </h2>
+                <div id="faqCollapse14" class="accordion-collapse collapse"
+                     aria-labelledby="faqHeading14" data-bs-parent="#faqAccordion">
+                    <div class="accordion-body lh-lg">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <div class="card bg-light border-0">
+                                    <div class="card-body">
+                                        <h6 class="fw-bold"><i class="bi bi-envelope me-2"></i>Email Support</h6>
+                                        <p class="small mb-0">
+                                            <a href="mailto:info@docklabs.ai">info@docklabs.ai</a><br>
+                                            Response within 1–2 business days.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card bg-light border-0">
+                                    <div class="card-body">
+                                        <h6 class="fw-bold"><i class="bi bi-chat-dots me-2"></i>Feedback Widget</h6>
+                                        <p class="small mb-0">Look in the bottom-right corner of every page. Routes to the shared support queue.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <p class="mt-3 mb-0">For questions specific to a peer product (Harbor, Admiralty, Beacon, etc.), open the help link inside that product.</p>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="card border-0 shadow-sm mt-4">
+            <div class="card-body text-center p-4">
+                <i class="bi bi-question-circle display-6 text-primary d-block mb-3"></i>
+                <h5 class="fw-bold">Still have questions?</h5>
+                <p class="text-muted mb-3">If you couldn't find the answer you were looking for, please don't hesitate to contact us.</p>
+                <a href="mailto:info@docklabs.ai" class="btn btn-primary">
+                    <i class="bi bi-envelope me-2"></i> Contact Support
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+{% endblock %}

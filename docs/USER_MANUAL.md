@@ -496,9 +496,13 @@ The four canary booleans under `flags`:
 | `cron_failures_24h` | At least one scheduled job errored in the last 24 hours. |
 | `notifications_failing` | At least one delivery failed. |
 
-`flags.healthy: false` is the simplest top-level alert. Surface in your
-external monitoring (cron-job.org, BetterUptime, Pingdom) as
-"non-200 status OR response body NOT containing `"healthy":true`".
+`healthy: false` (top-level, not nested under `flags`) is the simplest
+alert condition. Polling is wired via GitHub Actions at
+`.github/workflows/canary.yml` — runs every 15min, fails on non-200 or
+`healthy != true`, and opens (or de-dupes) a `canary`-labeled GitHub
+issue on failure. The four flags are also rendered inline as green/red
+chips in the staff-only "Ops canaries" sub-card on the dashboard, so
+you can see the same state at a glance without leaving Helm.
 
 ---
 

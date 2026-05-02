@@ -67,6 +67,7 @@ INSTALLED_APPS = [
     'keel.requests',
     'keel.foia',
     'keel.scheduling',
+    'keel.settings',
     # Third party
     'rest_framework',
     'crispy_forms',

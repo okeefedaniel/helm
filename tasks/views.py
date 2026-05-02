@@ -15,6 +15,18 @@ from keel.core.archive import ArchiveListView
 from keel.core.audit import log_audit
 
 from .access import can_summarize, project_access_required, task_access_required, workflow_view
+
+
+# Admin-tier roles for in-product privileged actions (delete others' tasks,
+# remove collaborators, bulk-import projects). ``agency_admin`` is the
+# customer-side admin tier — same operational power as ``helm_admin``
+# minus the IT surface (which lives behind ``is_staff`` / Django admin).
+_HELM_ADMIN_ROLES = frozenset({'system_admin', 'helm_admin', 'agency_admin'})
+
+
+def _is_helm_admin(user) -> bool:
+    role = getattr(user, 'role', '') or ''
+    return user.is_staff or role in _HELM_ADMIN_ROLES
 from . import exports
 from .forms import (
     ProjectAttachmentForm, ProjectCollaboratorForm, ProjectForm, ProjectNoteForm,
@@ -246,7 +258,7 @@ def task_edit(request, pk):
 @require_POST
 def task_delete(request, pk):
     task = request.task
-    if not (request.user.is_staff or request.user == task.created_by):
+    if not (_is_helm_admin(request.user) or request.user == task.created_by):
         return HttpResponse(status=403)
     project_url = task.project.get_absolute_url()
     task.delete()
@@ -355,7 +367,7 @@ def collaborator_add(request, pk):
 @require_POST
 def collaborator_remove(request, pk, collab_id):
     collab = get_object_or_404(TaskCollaborator, pk=collab_id, task_id=pk)
-    if not (request.user.is_staff
+    if not (_is_helm_admin(request.user)
             or request.user == collab.invited_by
             or request.user == collab.task.created_by
             or request.user == collab.user):
@@ -735,9 +747,12 @@ def import_project_online_view(request):
     POST (file)    → trial parse, render preview report.
     POST (commit=1)→ create projects via services.create_project().
 
-    Staff-only — bulk create across the workspace is privileged.
+    Admin-only — bulk create across the workspace is privileged. Open to
+    Django staff and to the customer-side admin tier (helm_admin /
+    agency_admin) since it's an operational data-import action, not an
+    IT/infra surface.
     """
-    if not request.user.is_staff:
+    if not _is_helm_admin(request.user):
         return HttpResponse(status=403)
 
     from tasks.integrations import project_online

@@ -83,7 +83,8 @@ class ProjectQuerySet(ArchiveQuerySetMixin, models.QuerySet):
 
         Visibility rules (any one grants access):
         - Anonymous → no projects.
-        - Superuser / is_staff / role='system_admin' → every project.
+        - Superuser / is_staff / admin-tier role (``system_admin`` /
+          ``helm_admin`` / ``agency_admin``) → every project.
         - Active ``ProjectAssignment(assigned_to=user)`` → that project.
         - Active ``ProjectCollaborator(user=user, is_active=True)`` → that project.
         - ``Project.created_by=user`` → that project.
@@ -93,10 +94,11 @@ class ProjectQuerySet(ArchiveQuerySetMixin, models.QuerySet):
         """
         if user is None or not getattr(user, 'is_authenticated', False):
             return self.none()
+        role = getattr(user, 'role', '') or ''
         if (
             getattr(user, 'is_superuser', False)
             or getattr(user, 'is_staff', False)
-            or getattr(user, 'role', '') == 'system_admin'
+            or role in ('system_admin', 'helm_admin', 'agency_admin')
         ):
             return self
         return self.filter(

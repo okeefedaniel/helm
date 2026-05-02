@@ -63,10 +63,14 @@ def can_summarize(user, project) -> bool:
     """
     if user is None or not getattr(user, 'is_authenticated', False):
         return False
+    role = getattr(user, 'role', '') or ''
     if (
         getattr(user, 'is_superuser', False)
         or getattr(user, 'is_staff', False)
-        or getattr(user, 'role', '') == 'system_admin'
+        # Suite-wide admin tier (system_admin) plus the customer-side
+        # admin tier (helm_admin / agency_admin) — both can summarize
+        # any project in the org without needing a Lead/Collaborator row.
+        or role in ('system_admin', 'helm_admin', 'agency_admin')
     ):
         return True
     if project.created_by_id == user.id:

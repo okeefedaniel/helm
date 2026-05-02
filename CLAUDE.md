@@ -61,7 +61,7 @@ The decorator lives in `keel.feed.views.helm_inbox_view` (since keel 0.18.0). Pe
 | Bounty | `api/helm_inbox.py` | `OpportunityMatch.user=user, status=NEW, relevance_score>=GRANT_MATCH_HIGH_SCORE` |
 | Beacon | `api/helm_inbox.py` | `KeepInTouch.user=user, is_active=True, next_reminder_date<=today+3d` + `Company.relationship_owner=user, approval_status=pending` |
 | Lookout | `api/helm_inbox.py` | `TrackedBill.tracked_by=user, status in {researching,collaborating,drafting_testimony}, archived_at IS NULL` |
-| Yeoman | `yeoman/helm_inbox.py` | `Invitation.(assigned_to OR principal OR delegated_to)=user, status in {received,in_review,accepted}` |
+| Yeoman | `yeoman/helm_inbox.py` | `Invitation.(assigned_to OR principal OR delegated_to)=user, status in {received,under_review,accepted}` |
 
 The graceful-fallback path in `InboxAggregator` (aggregate `ActionItem` count + "~N" badge) remains the safety net for any peer that ever drops the endpoint.
 

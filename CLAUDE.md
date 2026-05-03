@@ -6,7 +6,7 @@ Helm-specific guidance on top of the keel-wide CLAUDE.md above.
 
 ## Work Management surface
 
-The `tasks/` app is Helm's user-facing work-management surface, implementing the DockLabs Project Lifecycle Standard (the architectural standard name in keel does not change). URLs are gated by `HELM_TASKS_ENABLED` (env var); production deployments opt in.
+The `tasks/` app is Helm's user-facing work-management surface, implementing the DockLabs Project Lifecycle Standard (the architectural standard name in keel does not change). The whole app is gated by `HELM_TASKS_ENABLED` — `helm_site/settings.py` only appends `tasks.apps.TasksConfig` to `INSTALLED_APPS` when the env var is truthy, so without it the app's models, URLs, admin, and migrations are all absent. Production deployments opt in. **Tests that import `tasks.models` at module level will fail at loader time without the env var set** — see the pre-deploy checklist below.
 
 | Surface | URL |
 |---|---|
@@ -142,7 +142,7 @@ Or `force=True` to bypass user preferences for a critical alert.
 
 ## Pre-deploy checklist
 
-- [ ] Run `python manage.py test tasks` locally — all tests pass
+- [ ] Run `HELM_TASKS_ENABLED=true python manage.py test` locally — all tests pass. The env var is required: without it the `tasks` app is not in `INSTALLED_APPS` and 18 of the test modules under `tasks/tests/` fail at loader time with `Model class tasks.models.Project doesn't declare an explicit app_label`. CI sets it explicitly in `.github/workflows/ci.yml`.
 - [ ] `python manage.py check` clean
 - [ ] Migrations apply forward AND revert: `migrate helm_tasks 0002 && migrate helm_tasks`
 - [ ] Latest commit pushed to main; CI green

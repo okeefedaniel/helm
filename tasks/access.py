@@ -67,10 +67,11 @@ def can_summarize(user, project) -> bool:
     if (
         getattr(user, 'is_superuser', False)
         or getattr(user, 'is_staff', False)
-        # Suite-wide admin tier (system_admin) plus the customer-side
-        # admin tier (helm_admin / agency_admin) — both can summarize
-        # any project in the org without needing a Lead/Collaborator row.
-        or role in ('system_admin', 'helm_admin', 'agency_admin')
+        # Only the suite-wide admin tier bypasses per-project ACL.
+        # ``helm_admin`` and ``agency_admin`` are the baseline customer-side
+        # roles every Helm user holds — they grant product access, not
+        # cross-project visibility. See test_access.py.
+        or role == 'system_admin'
     ):
         return True
     if project.created_by_id == user.id:

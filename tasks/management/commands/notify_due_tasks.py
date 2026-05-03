@@ -50,7 +50,10 @@ class Command(BaseCommand):
     def handle(self, *args, **opts):
         dry = opts['dry_run']
         now = timezone.now()
-        today = now.date()
+        # Use localdate so "today" matches the user's calendar day, not UTC.
+        # After ~8pm EDT, ``now.date()`` rolls into UTC tomorrow and same-day
+        # tasks fall into the overdue bucket instead of due-soon.
+        today = timezone.localdate()
 
         # --- Due-soon: tasks whose due_date is in 12-36h, no notif today ---
         soon_window_start = today + timedelta(days=0)  # earliest tomorrow at midnight

@@ -83,11 +83,15 @@ class ProjectQuerySet(ArchiveQuerySetMixin, models.QuerySet):
 
         Visibility rules (any one grants access):
         - Anonymous → no projects.
-        - Superuser / is_staff / admin-tier role (``system_admin`` /
-          ``helm_admin`` / ``agency_admin``) → every project.
+        - Superuser / is_staff / role='system_admin' → every project.
         - Active ``ProjectAssignment(assigned_to=user)`` → that project.
         - Active ``ProjectCollaborator(user=user, is_active=True)`` → that project.
         - ``Project.created_by=user`` → that project.
+
+        ``helm_admin`` / ``agency_admin`` are the baseline customer-side
+        roles every Helm user holds — they grant product access, not
+        cross-project visibility. Only ``system_admin`` (suite-wide tier)
+        bypasses per-project ACL.
 
         Distinct() guards against the JOIN duplication when a user is both
         creator and collaborator.
@@ -98,7 +102,7 @@ class ProjectQuerySet(ArchiveQuerySetMixin, models.QuerySet):
         if (
             getattr(user, 'is_superuser', False)
             or getattr(user, 'is_staff', False)
-            or role in ('system_admin', 'helm_admin', 'agency_admin')
+            or role == 'system_admin'
         ):
             return self
         return self.filter(

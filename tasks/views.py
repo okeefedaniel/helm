@@ -17,11 +17,12 @@ from keel.core.audit import log_audit
 from .access import can_summarize, project_access_required, task_access_required, workflow_view
 
 
-# Admin-tier roles for in-product privileged actions (delete others' tasks,
-# remove collaborators, bulk-import projects). ``agency_admin`` is the
-# customer-side admin tier — same operational power as ``helm_admin``
-# minus the IT surface (which lives behind ``is_staff`` / Django admin).
-_HELM_ADMIN_ROLES = frozenset({'system_admin', 'helm_admin', 'agency_admin'})
+# Suite-wide admin tier for in-product privileged actions (delete others'
+# tasks, remove collaborators, bulk-import projects). The customer-side
+# ``helm_admin`` / ``agency_admin`` roles are the baseline every Helm user
+# holds — they grant product access, not operational privilege. Privileged
+# actions require Django ``is_staff`` or the suite-wide ``system_admin``.
+_HELM_ADMIN_ROLES = frozenset({'system_admin'})
 
 
 def _is_helm_admin(user) -> bool:
